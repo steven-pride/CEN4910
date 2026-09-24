@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { BuildingOffice2Icon } from "@heroicons/react/24/outline";
 
 export default function NavBar() {
   const [active, setActive] = useState("Dashboard");
@@ -11,8 +12,9 @@ export default function NavBar() {
       <div className="flex items-center justify-between px-6 py-2">
         {/* Left side: Logo and Navigation Links */}
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-lg font-bold">
-            Building Energy Tracker
+          <Link href="/" className="flex items-center gap-2 text-lg font-bold">
+            <BuildingOffice2Icon className="w-5 h-5 shrink-0" />
+            <span>Building Energy Tracker</span>
           </Link>
 
           <nav className="flex items-center gap-2">
@@ -44,7 +46,7 @@ export default function NavBar() {
               Add/Edit Property
             </Link>
             <Link
-              href="/"
+              href="/admin"
               onClick={() => setActive("User Management")}
               className={`px-3 py-1.5 rounded text-sm font-medium text-center leading-tight ${
                 active === "User Management" ? "bg-blue-800" : "hover:bg-blue-700"
