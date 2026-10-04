@@ -41,11 +41,11 @@ export default function NavBar() {
               Property Detail
             </Link>
             <Link
-              href="/"
+              href="/property/edit"
               onClick={() => setActive("Add/Edit Property")}
               className={clsx(
-                  'px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700',
-                  { "bg-blue-800": pathname === "/property/new"}
+                "px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700",
+                { "bg-blue-800": pathname === "/property/edit" }
               )}
             >
               Add/Edit Property
