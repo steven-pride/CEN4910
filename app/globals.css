@@ -26,6 +26,8 @@
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
@@ -39,6 +41,10 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-brand-teal: var(--brand-teal);
+  --color-brand-cyan: var(--brand-cyan);
+  --color-brand-teal-foreground: var(--brand-teal-foreground);
+  --color-brand-cyan-foreground: var(--brand-cyan-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -63,6 +69,8 @@
   --muted-foreground: oklch(0.56 0.021 213.5);
   --accent: oklch(0.963 0.002 197.1);
   --accent-foreground: oklch(0.218 0.008 223.9);
+  --success: oklch(0.6 0.14 160);
+  --success-foreground: oklch(0.98 0.01 160);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.925 0.005 214.3);
   --input: oklch(0.925 0.005 214.3);
@@ -81,6 +89,10 @@
   --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
   --sidebar-border: oklch(0.925 0.005 214.3);
   --sidebar-ring: oklch(0.723 0.014 214.4);
+  --brand-teal: oklch(0.5 0.09 205);
+  --brand-teal-foreground: oklch(0.98 0.01 205);
+  --brand-cyan: oklch(0.85 0.1 210);
+  --brand-cyan-foreground: oklch(0.98 0.01 210);
 }
 
 .dark {
@@ -98,6 +110,8 @@
   --muted-foreground: oklch(0.723 0.014 214.4);
   --accent: oklch(0.275 0.011 216.9);
   --accent-foreground: oklch(0.987 0.002 197.1);
+  --success: oklch(0.6 0.14 160);
+  --success-foreground: oklch(0.98 0.01 160);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
@@ -115,6 +129,10 @@
   --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.56 0.021 213.5);
+  --brand-teal: oklch(0.5 0.09 205);
+  --brand-teal-foreground: oklch(0.98 0.01 205);
+  --brand-cyan: oklch(0.85 0.1 210);
+  --brand-cyan-foreground: oklch(0.98 0.01 210);
 }
 
 @layer base {
