@@ -1,5 +1,6 @@
 import AdminFilterToolbar from "./components/AdminFilterToolbar";
 import AdminHeader from "./components/AdminHeader";
+import UserManagementTable from "./components/UserManagementTable";
 import TableFooter from "@/app/ui/TableFooter";
 import { mockUsers } from "@/data/mockUsers";
 
@@ -14,6 +15,9 @@ export default function AdminPage() {
 
         {/* Filters & Search Toolbar */}
         <AdminFilterToolbar />
+
+        {/* Table Markup & Mock Data Binding */}
+        <UserManagementTable users={mockUsers} />
 
         {/* Table Footer with Pagination */}
         <TableFooter

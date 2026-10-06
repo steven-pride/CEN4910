@@ -24,7 +24,7 @@ export default function AdminHeader({
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             User Management & Access Control
           </h1>
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
             {totalActiveCount} Active Team Members
           </span>
         </div>
@@ -32,7 +32,7 @@ export default function AdminHeader({
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <PlusIcon className="w-4 h-4" />
             <span>Add User</span>
