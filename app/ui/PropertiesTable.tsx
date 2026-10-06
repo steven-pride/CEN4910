@@ -1,9 +1,9 @@
 "use client";
 
-import properties, { type Property } from "@/data/mockProperties";
-import {
-  EllipsisVerticalIcon,
-} from "@heroicons/react/20/solid";
+import properties from "@/data/mockProperties";
+import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
+import ViewPropertiesButton from "@/app/ui/ViewPropertiesButton";
+import PropertyPage from "../property/[id]/page";
 
 export default function PropertiesTable() {
   const rows = properties;
@@ -31,12 +31,7 @@ export default function PropertiesTable() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        className="rounded bg-blue-700 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
-                      >
-                        View Dashboard
-                      </button>
+                        <ViewPropertiesButton key={p.id} property={p} />
                       <button
                         type="button"
                         className="rounded border border-slate-200 bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200"
