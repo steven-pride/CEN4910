@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Heading } from '@/app/ui/Heading';
 
 type ChartCardProps = {
   eyebrow: string;
@@ -18,7 +19,7 @@ export function ChartCard({ eyebrow, title, aside, footer, className, children }
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
             <Eyebrow>{eyebrow}</Eyebrow>
-            <h3 className="text-sm font-medium">{title}</h3>
+            <Heading level={6}>{title}</Heading>
           </div>
           {aside}
         </div>

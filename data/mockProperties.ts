@@ -146,3 +146,7 @@ const properties: Property[] = [
 ];
 
 export default properties;
+
+export async function getProperty(id: string) {
+  return { id, name: "Empire State Building", address: "350 5th Ave, New York, NY 10118" };
+}
