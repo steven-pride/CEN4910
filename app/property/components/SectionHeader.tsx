@@ -1,4 +1,4 @@
-import { Heading } from "@/components/ui/heading";
+import { Heading } from "@/app/ui/Heading";
 
 type SectionHeaderProps = {
   title: string;

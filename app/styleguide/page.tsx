@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { Heading, HEADING_LEVELS } from "@/components/ui/heading";
-import { StatCard, STAT_CARD_TONES } from "@/components/patterns/StatCard";
-import { StatusBadge, STATUS_TONES } from "@/components/patterns/StatusBadge";
-import { ChartCard } from "@/components/patterns/ChartCard";
-import { SectionHeader } from "@/components/patterns/SectionHeader";
-import { ConsumptionChart } from "@/features/energy/ConsumptionChart";
+import { Heading, HEADING_LEVELS } from "@/app/ui/Heading";
+import { StatCard, STAT_CARD_TONES } from "@/app/property/components/StatCard";
+import { StatusBadge, STATUS_TONES } from "@/app/property/components/StatusBadge";
+import { ChartCard } from "@/app/property/components/ChartCard";
+import { SectionHeader } from "@/app/property/components/SectionHeader";
+import { ConsumptionChart } from "@/app/property/components/energy/ConsumptionChart";
 
 const BUTTON_VARIANTS = ["default", "secondary", "outline", "ghost", "teal", "destructive"] as const;
 

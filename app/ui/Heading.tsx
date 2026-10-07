@@ -1,16 +1,18 @@
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
-export const HEADING_LEVELS = [1, 2, 3, 4] as const;
+export const HEADING_LEVELS = [1, 2, 3, 4, 5, 6] as const;
 type Level = (typeof HEADING_LEVELS)[number];
 
-const headingVariants = cva("font-semibold tracking-tight text-foreground", {
+const headingVariants = cva("font-semibold tracking-tight", {
   variants: {
     level: {
       1: "text-4xl lg:text-5xl",
       2: "text-2xl",
       3: "text-xl",
       4: "text-lg",
+      5: "text-md",
+      6: "text-sm font-medium"
     },
   },
   defaultVariants: { level: 2 },

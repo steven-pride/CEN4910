@@ -2,6 +2,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { Heading } from '@/app/ui/Heading';
 
 export const STAT_CARD_TONES = ["solid", "cyan", "teal"] as const;
 
@@ -33,12 +34,12 @@ export function StatCard({ tone, eyebrow, title, value, unit, trend, icon, class
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <Eyebrow className={cn(tone === "solid" && "text-primary-foreground/80")}>{eyebrow}</Eyebrow>
-            <h3 className="text-base font-medium">{title}</h3>
+            <Heading level={3} className="text-base font-medium">{title}</Heading>
           </div>
           {icon}
         </div>
         <p className="flex flex-wrap items-baseline gap-2">
-          <span className="text-4xl font-bold tracking-tight tabular-nums lg:text-5xl">{value}</span>
+          <span className="text-3xl font-bold tracking-tight tabular-nums">{value}</span>
           {unit && <span className="text-sm">{unit}</span>}
           {trend && <span className="text-xs font-medium text-success">{trend}</span>}
         </p>
