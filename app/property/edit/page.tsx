@@ -3,10 +3,11 @@
 import { useState } from "react";
 import {
   BuildingOffice2Icon,
+  BuildingOfficeIcon,
   InformationCircleIcon,
   AdjustmentsHorizontalIcon,
   GlobeAmericasIcon,
-  ArrowPathIcon,
+  StarIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 
@@ -119,7 +120,7 @@ export default function EditPropertyPage() {
 
         {/* Breadcrumb */}
         <div className="mb-2 text-sm font-semibold text-slate-600">
-          🏢 Portfolio / Empire State Building / Edit Settings
+          <BuildingOffice2Icon className="inline mr-1 h-4 w-4" /> Portfolio / Empire State Building / Edit Settings
         </div>
 
         {/* Page Heading */}
@@ -143,7 +144,7 @@ export default function EditPropertyPage() {
           <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-50 px-7 py-5">
             <div className="flex items-center gap-4">
               <div className="rounded-md bg-blue-600 p-3 text-white">
-                <BuildingOffice2Icon className="h-6 w-6" />
+                <BuildingOfficeIcon className="h-6 w-6" />
               </div>
 
               <div>
@@ -159,7 +160,7 @@ export default function EditPropertyPage() {
             </div>
 
             <div className="rounded-full bg-cyan-100 px-4 py-1.5 text-sm font-semibold text-cyan-700">
-              ● Status: Active
+              Status: Active
             </div>
           </div>
 
@@ -281,10 +282,6 @@ export default function EditPropertyPage() {
                   <AdjustmentsHorizontalIcon className="h-5 w-5 text-blue-600" />
                   SECTION 2: BASELINE OPERATIONAL SETUP
                 </h3>
-
-                <span className="rounded bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                  🔒 BMS TELEMETRY LINKED
-                </span>
               </div>
 
               <div className="grid gap-5 md:grid-cols-3">
@@ -388,7 +385,7 @@ export default function EditPropertyPage() {
                     </div>
 
                     <span className="text-2xl text-blue-600">
-                      ★
+                      <StarIcon className="h-6 w-6" />
                     </span>
                   </div>
 
@@ -467,10 +464,6 @@ export default function EditPropertyPage() {
                   >
                     Energy Manager Notes & Regulatory Filing Log
                   </label>
-
-                  <span className="text-xs font-semibold text-slate-500">
-                    Markdown notation supported
-                  </span>
                 </div>
 
                 <textarea
@@ -488,7 +481,7 @@ export default function EditPropertyPage() {
           <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-50 px-7 py-5">
 
             <p className="text-xs font-semibold text-slate-600">
-              ◉ Last updated by Alex Miller on Sep 14, 2024 at 16:42 EST
+              Last updated by Alex Miller on Sep 14, 2024 at 16:42 EST
             </p>
 
             <div className="flex gap-3">
@@ -498,15 +491,14 @@ export default function EditPropertyPage() {
                 onClick={handleReset}
                 className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 hover:bg-slate-100"
               >
-                <ArrowPathIcon className="h-5 w-5" />
-                Cancel / Revert
+                Cancel
               </button>
 
               <button
                 type="submit"
                 className="rounded-md bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-sm hover:bg-blue-700"
               >
-                ▣ Save Property Configuration
+                Save Property Configuration
               </button>
 
             </div>
