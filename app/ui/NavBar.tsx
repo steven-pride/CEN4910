@@ -46,7 +46,7 @@ export default function NavBar() {
               Add/Edit Property
             </Link>
             <Link
-              href="/admin"
+              href="/user"
               onClick={() => setActive("User Management")}
               className={`px-3 py-1.5 rounded text-sm font-medium text-center leading-tight ${
                 active === "User Management" ? "bg-blue-800" : "hover:bg-blue-700"
@@ -59,16 +59,16 @@ export default function NavBar() {
 
         {/* Right side: User Info, Notifications, Sign Out */}
         <div className="flex items-center gap-4">
-          <div className="bg-blue-600 px-3 py-1.5 rounded text-sm">
-            Energy Admin
-          </div>
-
-          <button
-            type="button"
-            className="border border-white px-2 py-0.5 rounded text-xs hover:bg-blue-700 text-center leading-tight"
-          >
-            Sign Out
-          </button>
+          
+          <Link
+              href="/admin"
+              onClick={() => setActive("User Management")}
+              className={`px-3 py-1.5 rounded text-sm font-medium text-center leading-tight ${
+                active === "User Management" ? "bg-blue-800" : "hover:bg-blue-700"
+              }`}
+            >
+              Admin
+            </Link>
         </div>
       </div>
     </header>
