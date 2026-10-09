@@ -21,42 +21,42 @@ export default function NavBar() {
 
           <nav className="flex items-center gap-2">
             <Link
-              href="/"
-              onClick={() => setActive("Dashboard")}
-              className={clsx(
-                  'px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700',
-                  { "bg-blue-800": pathname === "/"}
-              )}
+                href="/"
+                onClick={() => setActive("Dashboard")}
+                className={clsx(
+                    'px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700',
+                    { "bg-blue-800": pathname === "/"}
+                )}
             >
               Dashboard
             </Link>
             <Link
-              href="/"
-              onClick={() => setActive("Property Detail")}
-              className={clsx(
-                  'px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700',
-                  { "bg-blue-800": pathname === "/property"}
-              )}
+                href="/"
+                onClick={() => setActive("Property Detail")}
+                className={clsx(
+                    'px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700',
+                    { "bg-blue-800": pathname === "/property"}
+                )}
             >
               Property Detail
             </Link>
             <Link
-              href="/property/edit"
-              onClick={() => setActive("Add/Edit Property")}
-              className={clsx(
-                "px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700",
-                { "bg-blue-800": pathname === "/property/edit" }
-              )}
+                href="/property/edit"
+                onClick={() => setActive("Add/Edit Property")}
+                className={clsx(
+                    "px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700",
+                    { "bg-blue-800": pathname === "/property/edit" }
+                )}
             >
               Add/Edit Property
             </Link>
             <Link
-              href="/admin"
-              onClick={() => setActive("User Management")}
-              className={clsx(
-                  'px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700',
-                  { "bg-blue-800": pathname === "/admin"}
-              )}
+                href="/admin"
+                onClick={() => setActive("User Management")}
+                className={clsx(
+                    'px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700',
+                    { "bg-blue-800": pathname === "/admin"}
+                )}
             >
               User Management
             </Link>
@@ -66,12 +66,11 @@ export default function NavBar() {
         {/* Right side: User Info, Notifications, Sign Out */}
         <div className="flex items-center gap-4">
           <div className="bg-blue-600 px-3 py-1.5 rounded text-sm">
-            Energy Admin
-          </div>
+            Energy Admin</div>
 
           <button
-            type="button"
-            className="border border-white px-2 py-0.5 rounded text-xs hover:bg-blue-700 text-center leading-tight"
+              type="button"
+              className="border border-white px-2 py-0.5 rounded text-xs hover:bg-blue-700 text-center leading-tight"
           >
             Sign Out
           </button>
