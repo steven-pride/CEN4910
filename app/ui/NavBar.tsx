@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { BuildingOffice2Icon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { usePathname } from 'next/navigation';
 
 export default function NavBar() {
-  const [active, setActive] = useState("Dashboard");
   const pathname = usePathname();
   return (
     <header className="bg-blue-600 text-white">
@@ -22,7 +20,6 @@ export default function NavBar() {
           <nav className="flex items-center gap-2">
             <Link
                 href="/"
-                onClick={() => setActive("Dashboard")}
                 className={clsx(
                     'px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700',
                     { "bg-blue-800": pathname === "/"}
@@ -31,18 +28,16 @@ export default function NavBar() {
               Dashboard
             </Link>
             <Link
-                href="/"
-                onClick={() => setActive("Property Detail")}
+                href="/property/empire-state-building"
                 className={clsx(
                     'px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700',
-                    { "bg-blue-800": pathname === "/property"}
+                    { "bg-blue-800": pathname.startsWith("/property/") && pathname !== "/property/edit" }
                 )}
             >
               Property Detail
             </Link>
             <Link
                 href="/property/edit"
-                onClick={() => setActive("Add/Edit Property")}
                 className={clsx(
                     "px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700",
                     { "bg-blue-800": pathname === "/property/edit" }
@@ -52,7 +47,6 @@ export default function NavBar() {
             </Link>
             <Link
                 href="/admin"
-                onClick={() => setActive("User Management")}
                 className={clsx(
                     'px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700',
                     { "bg-blue-800": pathname === "/admin"}
