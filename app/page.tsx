@@ -114,14 +114,14 @@ function MetricCard({
                         title,
                         value,
                         suffix,
-                        description,
+                        description = "",
                         descriptionColor = "text-blue-700",
                         icon,
                     }: {
     title: string;
     value: string;
     suffix?: string;
-    description: string;
+    description?: string;
     descriptionColor?: string;
     icon: React.ReactNode;
 }) {
@@ -150,10 +150,6 @@ function MetricCard({
                     {icon}
                 </div>
             </div>
-
-            <p className={`mt-2 text-xs font-semibold ${descriptionColor}`}>
-                {description}
-            </p>
         </div>
     );
 }
@@ -228,15 +224,12 @@ export default function Home() {
                                 title="Gross Floor Area"
                                 value="1,485,000"
                                 suffix="sq ft"
-                                description="100% Active metering online"
                                 icon={<BuildingOfficeIcon className="h-4 w-4"/>}
                             />
 
                             <MetricCard
                                 title="Avg Portfolio Occupancy"
                                 value="86.4%"
-                                description="↗ +1.8% vs last quarter"
-                                descriptionColor="text-cyan-700"
                                 icon={<UserIcon className="h-4 w-4"/>}
                             />
 
@@ -244,8 +237,6 @@ export default function Home() {
                                 title="Avg Portfolio EUI"
                                 value="67.8"
                                 suffix="kBtu/sq ft"
-                                description="↑ +4.2% variance vs target (65)"
-                                descriptionColor="text-red-600"
                                 icon={<BoltIcon className="h-4 w-4" />}
                             />
 
@@ -253,8 +244,6 @@ export default function Home() {
                                 title="Avg Energy Score"
                                 value="81.2"
                                 suffix="/100"
-                                description=""
-                                descriptionColor="text-blue-600"
                                 icon={<Cog6ToothIcon className="h-4 w-4" />}
                             />
                         </section>
@@ -269,18 +258,9 @@ export default function Home() {
                                     </h2>
 
                                     <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-600">
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
-                      Current Building EUI
-                    </span>
-
                                         <span className="flex items-center gap-1.5">
                       <span className="h-[3px] w-4 rounded bg-red-600" />
-                      Target Benchmark Threshold (65 kBtu/sq ft)
-                    </span>
-
-                                        <span className="rounded bg-red-50 px-2 py-1 font-semibold text-red-600">
-                      ⚠ Portfolio Deviation: +4.2% vs target
+                      Target Benchmark (65 kBtu/sq ft)
                     </span>
                                     </div>
                                 </div>
@@ -295,12 +275,6 @@ export default function Home() {
                                         <p className="text-[11px] font-bold text-slate-500">
                                             Building Identity
                                         </p>
-
-                                        <div className="flex justify-between text-[10px] font-bold">
-                                            <span className="text-slate-600">0 kBtu</span>
-                                            <span className="text-red-600">65 kBtu Target</span>
-                                            <span className="text-slate-600">120 kBtu</span>
-                                        </div>
                                     </div>
 
                                     <div className="space-y-4">
