@@ -2,6 +2,7 @@ import AdminFilterToolbar from "./components/AdminFilterToolbar";
 import AdminHeader from "./components/AdminHeader";
 import TableFooter from "@/app/ui/TableFooter";
 import { mockUsers } from "@/data/mockUsers";
+import UserManagementTable from "@/app/admin/components/UserManagementTable";
 
 export default function AdminPage() {
   const activeCount = mockUsers.filter((u) => u.status === "Active").length;
@@ -14,6 +15,9 @@ export default function AdminPage() {
 
         {/* Filters & Search Toolbar */}
         <AdminFilterToolbar />
+
+        {/* Table Markup & Mock Data Binding */}
+        <UserManagementTable users={mockUsers} />
 
         {/* Table Footer with Pagination */}
         <TableFooter
