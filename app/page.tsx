@@ -1,223 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
-type IconProps = {
-    className?: string;
-};
-
-function DashboardIcon({ className = "h-5 w-5" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className={className}
-        >
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
-        </svg>
-    );
-}
-
-function BuildingIcon({ className = "h-5 w-5" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className={className}
-        >
-            <path d="M5 21V7l7-4v18" />
-            <path d="M12 21V9h7v12" />
-            <path d="M3 21h18" />
-            <path d="M8 9h1M8 12h1M8 15h1M15 12h1M15 15h1" />
-        </svg>
-    );
-}
-
-function ChartIcon({ className = "h-5 w-5" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className={className}
-        >
-            <path d="M4 20V10" />
-            <path d="M10 20V4" />
-            <path d="M16 20v-7" />
-            <path d="M22 20V7" />
-        </svg>
-    );
-}
-
-function DocumentIcon({ className = "h-5 w-5" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className={className}
-        >
-            <path d="M6 2h8l4 4v16H6z" />
-            <path d="M14 2v5h5" />
-            <path d="M9 12h6M9 16h6" />
-        </svg>
-    );
-}
-
-function BellIcon({ className = "h-5 w-5" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className={className}
-        >
-            <path d="M18 8a6 6 0 00-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-            <path d="M10 21h4" />
-        </svg>
-    );
-}
-
-function SettingsIcon({ className = "h-5 w-5" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className={className}
-        >
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06-2.83 2.83-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21h-4v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06-2.83-2.83.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3v-4h.09a1.65 1.65 0 001.51-1A1.65 1.65 0 004.27 7.2l-.06-.06L7.04 4.3l.06.06a1.65 1.65 0 001.82.33h.01a1.65 1.65 0 001-1.51V3h4v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06 2.83 2.83-.06.06A1.65 1.65 0 0019.4 9v.01a1.65 1.65 0 001.51 1H21v4h-.09A1.65 1.65 0 0019.4 15z" />
-        </svg>
-    );
-}
-
-function UserIcon({ className = "h-5 w-5" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className={className}
-        >
-            <circle cx="12" cy="7" r="4" />
-            <path d="M4 21a8 8 0 0116 0" />
-        </svg>
-    );
-}
-
-function SearchIcon({ className = "h-5 w-5" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className={className}
-        >
-            <circle cx="11" cy="11" r="7" />
-            <path d="M20 20l-4-4" />
-        </svg>
-    );
-}
-
-function LocationIcon({ className = "h-4 w-4" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className={className}
-        >
-            <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1116 0z" />
-            <circle cx="12" cy="10" r="2.5" />
-        </svg>
-    );
-}
-
-function ClockIcon({ className = "h-4 w-4" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className={className}
-        >
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 7v5l3 2" />
-        </svg>
-    );
-}
-
-function DownloadIcon({ className = "h-4 w-4" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className={className}
-        >
-            <path d="M12 3v12" />
-            <path d="M7 10l5 5 5-5" />
-            <path d="M5 21h14" />
-        </svg>
-    );
-}
-
-function PlusIcon({ className = "h-4 w-4" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className={className}
-        >
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 8v8M8 12h8" />
-        </svg>
-    );
-}
-
-function MoreIcon({ className = "h-5 w-5" }: IconProps) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className={className}
-        >
-            <circle cx="12" cy="5" r="1.5" />
-            <circle cx="12" cy="12" r="1.5" />
-            <circle cx="12" cy="19" r="1.5" />
-        </svg>
-    );
-}
-
-const navItems = [
-    { name: "Dashboard", icon: DashboardIcon, active: true },
-    { name: "Properties", icon: BuildingIcon },
-    { name: "Energy Analytics", icon: ChartIcon },
-    { name: "Reports", icon: DocumentIcon },
-    { name: "Alerts", icon: BellIcon, badge: 3 },
-    { name: "Compliance", icon: DocumentIcon },
-    { name: "Users", icon: UserIcon },
-    { name: "Settings", icon: SettingsIcon },
-];
+import {
+    CloudArrowUpIcon, BuildingOfficeIcon, PlusCircleIcon, CloudArrowDownIcon,
+    UserIcon, MagnifyingGlassIcon, DocumentIcon, ClockIcon, EllipsisHorizontalIcon,
+    Cog6ToothIcon, MapPinIcon, BoltIcon
+} from "@heroicons/react/24/outline";
 
 const benchmarks = [
     {
@@ -389,7 +177,7 @@ export default function Home() {
             <div className="flex min-h-screen">
                 {/* SIDEBAR */}
                 {/* MAIN */}
-                <div className="min-w-0 flex-1 lg:ml-[225px]">
+                <div className="min-w-0 lg:ml-[225px]">
                     {/* TOPBAR */}
 
                     <main className="px-4 py-5 md:px-6 lg:px-7">
@@ -398,7 +186,7 @@ export default function Home() {
                             <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-center">
                                 <div>
                                     <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-500">
-                                        <span>⌂</span>
+                                        <BuildingOfficeIcon className="h-4 w-4"/>
                                         <span>Enterprise Portfolio</span>
                                         <span>›</span>
                                         <span className="text-blue-600">Dashboard Overview</span>
@@ -412,25 +200,22 @@ export default function Home() {
                                         <span className="rounded bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600">
                       12 Properties Total
                     </span>
-
-                                        <span className="rounded bg-cyan-50 px-2.5 py-1 text-xs font-semibold text-cyan-700">
-                      ● Telemetry Synced: Realtime
-                    </span>
                                     </div>
                                 </div>
 
                                 <div className="flex flex-wrap gap-2">
                                     <button className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-blue-700">
-                                        <PlusIcon />
-                                        + New Property
+                                        <PlusCircleIcon className="h-4 w-4"/>
+                                        New Property
                                     </button>
 
-                                    <button className="rounded-md bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-200">
-                                        ⬆ Bulk Import Properties
+                                    <button className="rounded-md bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-200 flex flex-row items-center gap-2">
+                                        <CloudArrowUpIcon className="h-4 w-4"/>
+                                        Bulk Import Properties
                                     </button>
 
                                     <button className="flex items-center gap-2 rounded-md bg-cyan-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-cyan-800">
-                                        <DownloadIcon />
+                                        <CloudArrowDownIcon className="h-4 w-4"/>
                                         Export Dashboard Data
                                     </button>
                                 </div>
@@ -444,7 +229,7 @@ export default function Home() {
                                 value="1,485,000"
                                 suffix="sq ft"
                                 description="100% Active metering online"
-                                icon={<BuildingIcon />}
+                                icon={<BuildingOfficeIcon className="h-4 w-4"/>}
                             />
 
                             <MetricCard
@@ -452,7 +237,7 @@ export default function Home() {
                                 value="86.4%"
                                 description="↗ +1.8% vs last quarter"
                                 descriptionColor="text-cyan-700"
-                                icon={<UserIcon />}
+                                icon={<UserIcon className="h-4 w-4"/>}
                             />
 
                             <MetricCard
@@ -461,16 +246,16 @@ export default function Home() {
                                 suffix="kBtu/sq ft"
                                 description="↑ +4.2% variance vs target (65)"
                                 descriptionColor="text-red-600"
-                                icon={<span className="text-xl">ϟ</span>}
+                                icon={<BoltIcon className="h-4 w-4" />}
                             />
 
                             <MetricCard
                                 title="Avg Energy Score"
                                 value="81.2"
                                 suffix="/100"
-                                description="◎ 8 Buildings LEED/Star certified"
+                                description=""
                                 descriptionColor="text-blue-600"
-                                icon={<SettingsIcon />}
+                                icon={<Cog6ToothIcon className="h-4 w-4" />}
                             />
                         </section>
 
@@ -526,7 +311,7 @@ export default function Home() {
                                                 <div key={item.name}>
                                                     <div className="mb-2 flex items-center justify-between gap-4 text-sm">
                                                         <div className="flex items-center gap-2 font-medium text-slate-800">
-                                                            <BuildingIcon className="h-4 w-4 text-blue-600" />
+                                                            <BuildingOfficeIcon className="h-4 w-4 text-blue-600" />
                                                             {item.name}
                                                         </div>
 
@@ -577,7 +362,7 @@ export default function Home() {
 
                                 <div className="flex flex-col gap-2 md:flex-row">
                                     <div className="relative">
-                                        <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
 
                                         <input
                                             value={search}
@@ -625,7 +410,7 @@ export default function Home() {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-slate-100 text-blue-600">
-                                                        <BuildingIcon />
+                                                        <BuildingOfficeIcon className="h-6 w-6" />
                                                     </div>
 
                                                     <div>
@@ -634,7 +419,7 @@ export default function Home() {
                                                         </p>
 
                                                         <div className="mt-1 flex items-center gap-1 text-xs text-slate-600">
-                                                            <LocationIcon className="h-3.5 w-3.5" />
+                                                            <MapPinIcon className="h-3.5 w-3.5" />
                                                             {property.address}
                                                         </div>
                                                     </div>
@@ -688,7 +473,7 @@ export default function Home() {
                               {property.scoreStyle === "warning" ? "⚠" : "◎"}
                             </span>
 
-                                                    {property.score}/100 ({property.scoreText})
+                                                    {property.score}/100
                                                 </div>
                                             </td>
 
@@ -703,7 +488,7 @@ export default function Home() {
                                                     </button>
 
                                                     <button className="text-slate-600 hover:text-slate-900">
-                                                        <MoreIcon />
+                                                        <EllipsisHorizontalIcon className="h-6 w-6" />
                                                     </button>
                                                 </div>
                                             </td>
@@ -745,27 +530,6 @@ export default function Home() {
                             </div>
                         </section>
                     </main>
-
-                    {/* FOOTER */}
-                    <footer className="mt-6 flex flex-col justify-between gap-3 border-t border-slate-300 bg-white px-6 py-5 text-xs text-slate-600 md:flex-row md:items-center">
-                        <p>
-                            <span className="font-bold text-blue-600">PropertyTracker</span>{" "}
-                            © 2024 Commercial Facility & Energy Intelligence Suite. All rights
-                            reserved.
-                        </p>
-
-                        <div className="flex flex-wrap items-center gap-5">
-              <span className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Grid Telemetry: Operational
-              </span>
-
-                            <span className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-blue-600" />
-                BMS Gateway: Synchronized
-              </span>
-                        </div>
-                    </footer>
                 </div>
             </div>
         </div>
