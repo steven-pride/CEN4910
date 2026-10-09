@@ -12,6 +12,76 @@ export type Property = {
   numberOfBuildings: number;
 };
 
+export type ManagedProperty = {
+  id: number;
+  name: string;
+  address: string;
+  sqft: string;
+  hours: string;
+  occupancy: number;
+  score: number;
+  scoreText: string;
+  scoreStyle: "excellent" | "good" | "warning" | string;
+};
+
+export const managedProperties: ManagedProperty[] = [
+  {
+    id: 1,
+    name: "Empire State Building",
+    address: "350 5th Ave, New York, NY",
+    sqft: "250,000",
+    hours: "Mon-Fri 07:00 - 19:00",
+    occupancy: 92,
+    score: 88,
+    scoreText: "",
+    scoreStyle: "excellent",
+  },
+  {
+    id: 2,
+    name: "Midtown Commercial Tower",
+    address: "745 7th Ave, New York, NY",
+    sqft: "180,000",
+    hours: "24/7 Operations",
+    occupancy: 85,
+    score: 92,
+    scoreText: "",
+    scoreStyle: "excellent",
+  },
+  {
+    id: 3,
+    name: "Hudson Point Plaza",
+    address: "500 W 33rd St, New York, NY",
+    sqft: "340,000",
+    hours: "Mon-Fri 06:00 - 22:00",
+    occupancy: 78,
+    score: 64,
+    scoreText: "",
+    scoreStyle: "warning",
+  },
+  {
+    id: 4,
+    name: "Financial Center West",
+    address: "200 Liberty St, New York, NY",
+    sqft: "125,000",
+    hours: "Mon-Sat 08:00 - 20:00",
+    occupancy: 88,
+    score: 76,
+    scoreText: "",
+    scoreStyle: "good",
+  },
+  {
+    id: 5,
+    name: "Liberty Tech Park",
+    address: "101 Innovation Blvd, Jersey City, NJ",
+    sqft: "410,000",
+    hours: "24/7 Operations",
+    occupancy: 95,
+    score: 94,
+    scoreText: "",
+    scoreStyle: "excellent",
+  },
+];
+
 const properties: Property[] = [
   {
     id: 'empire-state-building',
@@ -145,6 +215,7 @@ const properties: Property[] = [
   },
 ];
 
+export { properties };
 export default properties;
 
 export async function getProperty(id: string) {
