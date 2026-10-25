@@ -121,12 +121,6 @@ export default function UserManagementTable({
                         <div>
                           <div className="font-semibold text-slate-900 flex items-center gap-1.5">
                             <span>{user.fullName}</span>
-                            {user.isVerified && (
-                              <CheckBadgeIcon
-                                className="w-4 h-4 text-blue-500 shrink-0"
-                                aria-label="Verified user"
-                              />
-                            )}
                           </div>
                           <div className="text-xs text-slate-500">
                             {user.title}
@@ -213,8 +207,8 @@ export default function UserManagementTable({
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                              isActive ? "translate-x-4" : "translate-x-0"
+                            className={`inline-block h-4 w-4 my-auto transform rounded-full bg-white transition ${
+                              isActive ? "translate-x-4" : "translate-x-1"
                             }`}
                           />
                         </button>

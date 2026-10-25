@@ -14,7 +14,7 @@ export default function AdminFilterToolbar() {
         <input
           type="text"
           placeholder="Search by name, email or building..."
-          className="w-full h-10 pl-9 pr-4 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full h-10 pl-9 pr-4 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
@@ -22,7 +22,7 @@ export default function AdminFilterToolbar() {
       <div className="flex flex-wrap items-center gap-3">
         <select
           defaultValue="All"
-          className="h-10 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="h-10 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="All">All Roles</option>
           <option value="Admin">Admin</option>
@@ -32,7 +32,7 @@ export default function AdminFilterToolbar() {
 
         <select
           defaultValue="All"
-          className="h-10 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="h-10 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="All">All Properties</option>
           <option value="Orlando City Hall">Orlando City Hall</option>
@@ -45,7 +45,7 @@ export default function AdminFilterToolbar() {
 
         <select
           defaultValue="All"
-          className="h-10 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="h-10 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="All">All Statuses</option>
           <option value="Active">Active</option>
@@ -54,7 +54,7 @@ export default function AdminFilterToolbar() {
 
         <button
           type="button"
-          className="flex items-center justify-center w-10 h-10 text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex items-center justify-center w-10 h-10 text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           title="Toggle advanced filters"
           aria-label="Toggle advanced filters"
         >

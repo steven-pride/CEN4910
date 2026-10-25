@@ -53,7 +53,7 @@ export default function TableFooter({
           <span>Rows per page:</span>
           <select
             defaultValue={pagination.pageSize}
-            className="px-2 py-1 bg-white border border-slate-200 rounded text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-slate-200 rounded px-2 py-1 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {pageSizeOptions.map((opt) => (
               <option key={opt} value={opt}>
@@ -73,7 +73,7 @@ export default function TableFooter({
           <button
             type="button"
             disabled={pagination.page <= 1}
-            className="p-1 rounded text-slate-500 hover:bg-slate-100 disabled:opacity-40"
+            className="p-1 rounded border border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-40"
             aria-label="Previous page"
           >
             <ChevronLeftIcon className="w-4 h-4" />
@@ -81,7 +81,7 @@ export default function TableFooter({
           <button
             type="button"
             disabled={pagination.page >= totalPages}
-            className="p-1 rounded text-slate-500 hover:bg-slate-100 disabled:opacity-40"
+            className="p-1 rounded border border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-40"
             aria-label="Next page"
           >
             <ChevronRightIcon className="w-4 h-4" />

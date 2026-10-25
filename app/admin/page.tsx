@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type IconProps = {
   className?: string;
@@ -219,50 +219,12 @@ const navItems = [
   { name: "Settings", icon: SettingsIcon },
 ];
 
-const benchmarks = [
-  {
-    name: "Empire State Tower",
-    value: 54.2,
-    percent: 54.2 / 1.2,
-    detail: "-16.6% vs Target",
-    status: "good",
-  },
-  {
-    name: "Midtown Plaza",
-    value: 51.8,
-    percent: 51.8 / 1.2,
-    detail: "-20.3% vs Target",
-    status: "good",
-  },
-  {
-    name: "Hudson Yards 4",
-    value: 79.4,
-    percent: 79.4 / 1.2,
-    detail: "+22.1% Spiking",
-    status: "danger",
-  },
-  {
-    name: "Pacific Heights Center",
-    value: 62.0,
-    percent: 62 / 1.2,
-    detail: "-4.6% Compliant",
-    status: "normal",
-  },
-  {
-    name: "Boston Harbor Plaza",
-    value: 64.5,
-    percent: 64.5 / 1.2,
-    detail: "-0.8% On Target",
-    status: "normal",
-  },
-  {
-    name: "Metro Financial",
-    value: 88.3,
-    percent: 88.3 / 1.2,
-    detail: "+35.8% Alert",
-    status: "danger",
-  },
-];
+type BuildingBenchmark = {
+  id: string;
+  building_name: string;
+  eui: number;
+  target_eui: number;
+};
 
 const properties = [
   {
@@ -373,6 +335,52 @@ function MetricCard({
 export default function Home() {
   const [search, setSearch] = useState("");
 
+  const [benchmarks, setBenchmarks] = useState<BuildingBenchmark[]>([]);
+  const [loadingBenchmarks, setLoadingBenchmarks] = useState(true);
+  const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadBenchmarks() {
+      try {
+        const response = await fetch("/api/building-comparison", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data: BuildingBenchmark[] = await response.json();
+        if (!Array.isArray(data)) throw new Error("Invalid API response");
+        setBenchmarks(data);
+        setBenchmarkError(null);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setBenchmarkError(error instanceof Error ? error.message : "Unknown error");
+      } finally {
+        if (!controller.signal.aborted) setLoadingBenchmarks(false);
+      }
+    }
+
+    loadBenchmarks();
+    return () => controller.abort();
+  }, []);
+
+  const benchmarkAverage = benchmarks.length
+    ? benchmarks.reduce((sum, row) => sum + Number(row.eui), 0) / benchmarks.length
+    : null;
+  const benchmarkTargetAverage = benchmarks.length
+    ? benchmarks.reduce((sum, row) => sum + Number(row.target_eui), 0) / benchmarks.length
+    : null;
+  const benchmarkDeviation =
+    benchmarkAverage !== null && benchmarkTargetAverage !== null && benchmarkTargetAverage > 0
+      ? ((benchmarkAverage - benchmarkTargetAverage) / benchmarkTargetAverage) * 100
+      : null;
+  const benchmarkScale = Math.max(120, ...benchmarks.map((row) => Math.max(Number(row.eui), Number(row.target_eui))));
+  const commonTarget = benchmarks.length > 0 && benchmarks.every((row) => Number(row.target_eui) === Number(benchmarks[0].target_eui))
+    ? Number(benchmarks[0].target_eui)
+    : null;
+
+
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
       const q = search.toLowerCase();
@@ -456,11 +464,11 @@ export default function Home() {
               />
 
               <MetricCard
-                title="Avg Portfolio EUI"
-                value="67.8"
+                title="Avg Compared EUI"
+                value={benchmarkAverage !== null ? benchmarkAverage.toFixed(1) : "—"}
                 suffix="kBtu/sq ft"
-                description="↑ +4.2% variance vs target (65)"
-                descriptionColor="text-red-600"
+                description={benchmarkDeviation === null ? "Awaiting benchmark data" : `${benchmarkDeviation >= 0 ? "+" : ""}${benchmarkDeviation.toFixed(1)}% vs target`}
+                descriptionColor={benchmarkDeviation !== null && benchmarkDeviation > 0 ? "text-red-600" : "text-cyan-700"}
                 icon={<span className="text-xl">ϟ</span>}
               />
 
@@ -491,11 +499,11 @@ export default function Home() {
 
                     <span className="flex items-center gap-1.5">
                       <span className="h-[3px] w-4 rounded bg-red-600" />
-                      Target Benchmark Threshold (65 kBtu/sq ft)
+                      {commonTarget !== null ? `Target Benchmark Threshold (${commonTarget} kBtu/sq ft)` : "Target Benchmark Threshold (per building)"}
                     </span>
 
                     <span className="rounded bg-red-50 px-2 py-1 font-semibold text-red-600">
-                      ⚠ Portfolio Deviation: +4.2% vs target
+                      {benchmarkDeviation === null ? "Awaiting data" : `Compared Buildings Deviation: ${benchmarkDeviation >= 0 ? "+" : ""}${benchmarkDeviation.toFixed(1)}% vs target`}
                     </span>
                   </div>
                 </div>
@@ -513,47 +521,41 @@ export default function Home() {
 
                     <div className="flex justify-between text-[10px] font-bold">
                       <span className="text-slate-600">0 kBtu</span>
-                      <span className="text-red-600">65 kBtu Target</span>
-                      <span className="text-slate-600">120 kBtu</span>
+                      <span className="text-red-600">{commonTarget !== null ? `${commonTarget} kBtu Target` : "Individual targets"}</span>
+                      <span className="text-slate-600">{benchmarkScale.toFixed(0)} kBtu</span>
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    {benchmarks.map((item) => {
-                      const danger = item.status === "danger";
+                    {loadingBenchmarks && <p className="text-sm text-slate-500">Loading building comparisons...</p>}
+                    {benchmarkError && <p role="alert" className="text-sm text-red-600">Unable to load building comparisons: {benchmarkError}</p>}
+                    {!loadingBenchmarks && !benchmarkError && benchmarks.length === 0 && (
+                      <p className="text-sm text-slate-500">No building data available.</p>
+                    )}
+                    {!benchmarkError && benchmarks.map((item) => {
+                      const eui = Number(item.eui);
+                      const target = Number(item.target_eui);
+                      const deviation = target > 0 ? ((eui - target) / target) * 100 : null;
+                      const danger = eui > target;
+                      const low = deviation !== null && deviation <= -10;
 
                       return (
-                        <div key={item.name}>
+                        <div key={item.id}>
                           <div className="mb-2 flex items-center justify-between gap-4 text-sm">
                             <div className="flex items-center gap-2 font-medium text-slate-800">
                               <BuildingIcon className="h-4 w-4 text-blue-600" />
-                              {item.name}
+                              {item.building_name}
                             </div>
-
-                            <div
-                              className={`whitespace-nowrap text-xs font-medium ${
-                                danger ? "text-red-600" : "text-cyan-700"
-                              }`}
-                            >
-                              {item.value.toFixed(1)} kBtu/sq ft ({item.detail})
+                            <div className={`text-right text-xs font-medium ${danger ? "text-red-600" : "text-cyan-700"}`}>
+                              {eui.toFixed(1)} kBtu/sq ft ({deviation === null ? "No target" : `${deviation > 0 ? "+" : ""}${deviation.toFixed(1)}% vs Target`})
                             </div>
                           </div>
-
                           <div className="relative h-4 overflow-hidden rounded-full bg-slate-200">
-                            {/* target 65 / 120 */}
-                            <div className="absolute left-[54.16%] top-0 z-10 h-full w-[2px] bg-red-500" />
-
+                            <div className="absolute top-0 z-10 h-full w-[2px] bg-red-500"
+                              style={{ left: `${Math.min(100, Math.max(0, target / benchmarkScale * 100))}%` }} />
                             <div
-                              style={{
-                                width: `${Math.min(item.percent, 100)}%`,
-                              }}
-                              className={`h-full rounded-full ${
-                                danger
-                                  ? "bg-red-600"
-                                  : item.status === "good"
-                                    ? "bg-cyan-600"
-                                    : "bg-blue-600"
-                              }`}
+                              style={{ width: `${Math.min(100, Math.max(0, eui / benchmarkScale * 100))}%` }}
+                              className={`h-full rounded-full ${danger ? "bg-red-600" : low ? "bg-cyan-600" : "bg-blue-600"}`}
                             />
                           </div>
                         </div>
