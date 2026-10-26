@@ -2,6 +2,7 @@ import { BuildingOffice2Icon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from 'next/link';
+import { login } from "@/lib/authActions";
 
 export default function LoginPage() {
   return (
@@ -53,7 +54,7 @@ export default function LoginPage() {
             />
           </div>
 
-          <Button type="button" variant="default" size="lg" className="w-full">
+          <Button type="submit" variant="default" size="lg" className="w-full" formAction={login}>
             Sign in
           </Button>
         </form>

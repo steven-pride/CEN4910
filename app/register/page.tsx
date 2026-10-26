@@ -1,9 +1,35 @@
-import { BuildingOffice2Icon } from "@heroicons/react/24/outline";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+'use client'
+
+import { useActionState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { signup, type SignupState } from '@/lib/authActions';
+
+const initialState: SignupState = { success: false }
 
 export default function RegisterPage() {
+  const router = useRouter()
+  const [state, formAction, pending] = useActionState(signup, initialState)
+
+  // Auto-redirect a few seconds after the account is created
+  useEffect(() => {
+    if (!state.success) return
+    const timer = setTimeout(() => router.push('/login'), 4000)
+    return () => clearTimeout(timer)
+  }, [state.success, router])
+
   return (
     <main className="flex flex-1 items-center justify-center bg-muted/50 px-4 py-12 sm:px-6">
       <section className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
@@ -22,7 +48,7 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <form className="space-y-5">
+        <form action={formAction} className="space-y-5">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
               Email address
@@ -46,7 +72,7 @@ export default function RegisterPage() {
               id="password"
               name="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               placeholder="Enter your password"
               required
               className="h-11 rounded-lg bg-background"
@@ -61,15 +87,21 @@ export default function RegisterPage() {
               id="confirmPassword"
               name="confirmPassword"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               placeholder="Confirm your password"
               required
               className="h-11 rounded-lg bg-background"
             />
           </div>
 
-          <Button type="button" variant="default" size="lg" className="w-full">
-            Sign in
+          {state.error && (
+            <p role="alert" className="text-sm text-red-600">
+              {state.error}
+            </p>
+          )}
+
+          <Button type="submit" size="lg" className="w-full" disabled={pending}>
+            {pending ? 'Creating account...' : 'Sign up'}
           </Button>
         </form>
 
@@ -77,6 +109,31 @@ export default function RegisterPage() {
           Already have an account? <Link href="/login" className="underline text-blue-600 hover:text-blue-800">Login here.</Link>
         </p>
       </section>
+
+      
+      <AlertDialog
+        open={state.success}
+        onOpenChange={(open) => {
+          // Covers Escape key / any other dismissal
+          if (!open) router.push('/login')
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Account created</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your account has been created successfully. You will be
+              redirected to the login page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => router.push('/login')}>
+              Go to login
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </main>
   );
 }
