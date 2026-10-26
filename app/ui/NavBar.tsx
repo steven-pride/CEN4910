@@ -61,13 +61,15 @@ export default function NavBar() {
         <div className="flex items-center gap-4">
           <div className="bg-blue-600 px-3 py-1.5 rounded text-sm">
             Energy Admin</div>
-
-          <button
-              type="button"
-              className="border border-white px-2 py-0.5 rounded text-xs hover:bg-blue-700 text-center leading-tight"
-          >
-            Sign Out
-          </button>
+            <form action="/auth/signout" method="post">
+              <button
+                type="submit"
+                className="cursor-pointer border border-white px-2 py-0.5 rounded text-xs hover:bg-blue-700 text-center leading-tight"
+            >
+              Sign Out
+            </button>
+            </form>
+          
         </div>
       </div>
     </header>
