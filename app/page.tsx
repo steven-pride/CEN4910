@@ -2,6 +2,8 @@ import PortfolioHeader from "@/app/ui/PortfolioHeader";
 import PortfolioMetrics from "@/app/ui/PortfolioMetrics";
 import BuildingBenchmarkCard from "@/app/ui/BuildingBenchmarkCard";
 import ManagedPropertiesTable from "@/app/ui/ManagedPropertiesTable";
+import { portfolioStats } from "@/data/mockAnalytics";
+
 
 export default function Home() {
     return (
@@ -14,7 +16,7 @@ export default function Home() {
 
                     <main className="px-4 py-5 md:px-6 lg:px-7">
                         {/* PAGE HEADER */}
-                        <PortfolioHeader />
+                        <PortfolioHeader totalProperties={portfolioStats.totalProperties} />
 
                         {/* KPI CARDS */}
                         <PortfolioMetrics />

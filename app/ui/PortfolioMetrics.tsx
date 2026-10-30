@@ -1,11 +1,15 @@
+
 import React from "react";
+
 import {
   BuildingOfficeIcon,
   UserIcon,
   BoltIcon,
   Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
+
 import { MetricCard } from "@/app/ui/MetricCard";
+import { portfolioStats } from "@/data/mockAnalytics";
 
 export interface MetricItem {
   title: string;
@@ -23,30 +27,45 @@ export interface PortfolioMetricsProps {
 const defaultMetrics: MetricItem[] = [
   {
     title: "Gross Floor Area",
-    value: "1,485,000",
+    value: portfolioStats.grossFloorArea.toLocaleString("en-US"),
     suffix: "sq ft",
+    description: "Calculated from property use (demo)",
     icon: <BuildingOfficeIcon className="h-4 w-4" />,
   },
   {
     title: "Avg Portfolio Occupancy",
-    value: "86.4%",
+    value:
+      portfolioStats.averageOccupancy !== null
+        ? `${portfolioStats.averageOccupancy.toFixed(1)}%`
+        : "—",
+    description: "Awaiting occupancy data",
     icon: <UserIcon className="h-4 w-4" />,
   },
   {
-    title: "Avg Portfolio EUI",
-    value: "67.8",
+    title: "Avg Building EUI",
+    value:
+      portfolioStats.averageEui !== null
+        ? portfolioStats.averageEui.toFixed(1)
+        : "—",
     suffix: "kBtu/sq ft",
+    description: "Average of compared buildings (demo)",
     icon: <BoltIcon className="h-4 w-4" />,
   },
   {
     title: "Avg Energy Score",
-    value: "81.2",
+    value:
+      portfolioStats.averageEnergyScore !== null
+        ? portfolioStats.averageEnergyScore.toFixed(1)
+        : "—",
     suffix: "/100",
+    description: "Energy score not yet defined",
     icon: <Cog6ToothIcon className="h-4 w-4" />,
   },
 ];
 
-export function PortfolioMetrics({ metrics = defaultMetrics }: PortfolioMetricsProps) {
+export function PortfolioMetrics({
+  metrics = defaultMetrics,
+}: PortfolioMetricsProps) {
   return (
     <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {metrics.map((metric) => (
