@@ -17,7 +17,7 @@ import {
 // NOTE: create/edit/remove only control which buttons are SHOWN.
 // Row Level Security in the database is what actually enforces access.
 // ---------------------------------------------------------------------------
-type Role = 'admin' | 'building_manager' | 'analyzer'
+type Role = 'admin' | 'property_manager' | 'analyzer'
 type Opt = { value: string; label: string }
 type Col = {
   name: string // database column
@@ -38,7 +38,7 @@ type Cfg = {
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: 'Admin',
-  building_manager: 'Building Manager',
+  property_manager: 'Property Manager',
   analyzer: 'Analyzer',
 }
 const ROLE_OPTIONS: Opt[] = Object.entries(ROLE_LABELS).map(([value, label]) => ({
@@ -47,7 +47,7 @@ const ROLE_OPTIONS: Opt[] = Object.entries(ROLE_LABELS).map(([value, label]) => 
 }))
 
 const ADMIN: Role[] = ['admin']
-const WRITERS: Role[] = ['admin', 'building_manager']
+const WRITERS: Role[] = ['admin', 'property_manager']
 
 const TABLES: Record<string, Cfg> = {
   property: {
@@ -116,7 +116,6 @@ const TABLES: Record<string, Cfg> = {
     pk: [{ name: 'user_id', label: 'User ID' }],
     cols: [
       { name: 'email', label: 'Email', readOnly: true },
-      { name: 'full_name', label: 'Full Name' },
       { name: 'role', label: 'Role', type: 'select', options: ROLE_OPTIONS },
     ],
     create: [], // profiles are created by the signup trigger

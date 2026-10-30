@@ -7,7 +7,7 @@ export const mockUsers: SystemUser[] = [
     title: "Principal Executive",
     isVerified: true,
     email: "s.jenkins@propertytracker.io",
-    role: "Admin",
+    role: "admin",
     assignedBuildings: [
       {
         id: -1,
@@ -22,7 +22,7 @@ export const mockUsers: SystemUser[] = [
     fullName: "Marcus Vance",
     title: "Senior Field Lead",
     email: "m.vance@energyops.com",
-    role: "Property Manager",
+    role: "property_manager",
     assignedBuildings: [
       { id: 1, name: "Orlando City Hall" },
       { id: 2, name: "Orange County Convention Center" },
@@ -34,7 +34,7 @@ export const mockUsers: SystemUser[] = [
     fullName: "Elena Rostova",
     title: "Sustainability Lead",
     email: "e.rostova@greenmetrics.org",
-    role: "Property Manager",
+    role: "property_manager",
     assignedBuildings: [
       { id: 3, name: "Dr. Phillips Center" },
       { id: 4, name: "Amway Center" },
@@ -46,7 +46,7 @@ export const mockUsers: SystemUser[] = [
     fullName: "David Kuan",
     title: "Financial Analyst",
     email: "d.kuan@investprop.com",
-    role: "Read-Only Analyst",
+    role: "analyzer",
     assignedBuildings: [{ id: 1, name: "Orlando City Hall" }],
     status: "Disabled",
   },
@@ -55,7 +55,7 @@ export const mockUsers: SystemUser[] = [
     fullName: "Rachel Adams",
     title: "Regional Manager",
     email: "r.adams@facilityops.net",
-    role: "Property Manager",
+    role: "property_manager",
     assignedBuildings: [
       { id: 5, name: "Citrus Center" },
       { id: 6, name: "SunTrust Center" },
