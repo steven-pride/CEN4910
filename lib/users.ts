@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { UserRole } from "@/types";
 
 export interface PropertyItem {
@@ -60,4 +61,21 @@ export async function fetchFormattedProfile(
   }
 
   return formatUserProfileRow(data as unknown as UserProfileRow);
+}
+
+export async function deleteUser(id: string) {
+  const supabase = createAdminClient();
+
+  // Sign out / invalidate session
+  await supabase.auth.signOut();
+
+  // Delete user from Supabase auth
+  const { error: authError } = await supabase.auth.admin.deleteUser(id);
+
+  if (authError) {
+    console.error("Error deleting user:", authError);
+    return { error: "Failed to delete user" };
+  }
+
+  return { success: true };
 }

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  PlusIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 

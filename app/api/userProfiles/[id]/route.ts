@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchFormattedProfile } from "@/lib/users";
+import { fetchFormattedProfile, deleteUser } from "@/lib/users";
 
 // 1. GET - Read single user profile
 export async function GET(
@@ -135,9 +135,9 @@ export async function PATCH(
   }
 }
 
-// 3. DELETE - Soft deactivate or hard delete user profile
+// 3. DELETE - Delete user profile and remove from Supabase Auth
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -160,8 +160,17 @@ export async function DELETE(
       );
     }
 
+    // Delete user from Supabase Auth
+    const authResult = await deleteUser(id);
+    if (authResult?.error) {
+      return NextResponse.json(
+        { error: authResult.error, code: "AUTH_DELETE_ERROR" },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { success: true, message: "User profile deleted successfully" },
+      { success: true, message: "User deleted successfully" },
       { status: 200 }
     );
   } catch (err: unknown) {

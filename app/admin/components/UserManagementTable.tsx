@@ -111,31 +111,6 @@ export default function UserManagementTable({
     }
   };
 
-  const handleStatusToggle = async (userId: string, currentStatus: UserStatus) => {
-    const nextStatus: UserStatus = currentStatus === "Active" ? "Disabled" : "Active";
-    try {
-      const res = await fetch(`/api/userProfiles/${userId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        alert(errorData.error || "Failed to update status");
-        return;
-      }
-
-      const updated = await res.json();
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, status: updated.status } : u))
-      );
-    } catch (err) {
-      console.error("Error toggling status:", err);
-      alert("Error toggling status");
-    }
-  };
-
   const handleAssignBuilding = async (userId: string, propertyIdToAdd: number) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return;
