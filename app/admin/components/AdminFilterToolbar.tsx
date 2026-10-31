@@ -106,24 +106,6 @@ export default function AdminFilterToolbar() {
             </option>
           ))}
         </select>
-
-        <select
-          value={status}
-          onChange={(e) => updateParam("status", e.target.value)}
-          className="h-10 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="All">All Statuses</option>
-          <option value="Active">Active</option>
-          <option value="Disabled">Disabled</option>
-        </select>
-
-        <button
-          type="button"
-          className="flex items-center justify-center w-10 h-10 text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          title="Filter settings"
-        >
-          <AdjustmentsHorizontalIcon className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );
