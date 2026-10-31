@@ -1,7 +1,7 @@
 export type UserRole =
-    | "Admin"
-    | "Property Manager"
-    | "Read-Only Analyst";
+    | "admin"
+    | "property_manager"
+    | "analyzer";
 
 export type UserStatus = "Active" | "Disabled";
 
@@ -14,16 +14,18 @@ export interface BuildingAssignment {
 export interface SystemUser {
     id: string;
     fullName: string;
-    title: string;
+    title?: string;
     isVerified?: boolean;
     email: string;
     role: UserRole;
     assignedBuildings: BuildingAssignment[];
     status: UserStatus;
+    createdAt?: string;
 }
 
 export interface PaginationState {
     page: number;
     pageSize: number;
     totalCount: number;
+    totalPages?: number;
 }

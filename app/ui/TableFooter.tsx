@@ -8,6 +8,8 @@ export interface TableFooterProps {
   pageSizeOptions?: number[];
   actions?: React.ReactNode;
   children?: React.ReactNode;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
 const defaultPagination: PaginationState = {
@@ -22,6 +24,8 @@ export default function TableFooter({
   pageSizeOptions = [5, 10, 25],
   actions,
   children,
+  onPageChange,
+  onPageSizeChange,
 }: TableFooterProps) {
   const startRecord =
     pagination.totalCount === 0
@@ -52,7 +56,8 @@ export default function TableFooter({
         <div className="flex items-center gap-2">
           <span>Rows per page:</span>
           <select
-            defaultValue={pagination.pageSize}
+            value={pagination.pageSize}
+            onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
             className="border border-slate-200 rounded px-2 py-1 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {pageSizeOptions.map((opt) => (
@@ -73,16 +78,18 @@ export default function TableFooter({
           <button
             type="button"
             disabled={pagination.page <= 1}
+            onClick={() => onPageChange?.(pagination.page - 1)}
             className="p-1 rounded border border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-40"
-            aria-label="Previous page"
+            title="Previous page"
           >
             <ChevronLeftIcon className="w-4 h-4" />
           </button>
           <button
             type="button"
             disabled={pagination.page >= totalPages}
+            onClick={() => onPageChange?.(pagination.page + 1)}
             className="p-1 rounded border border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-40"
-            aria-label="Next page"
+            title="Next page"
           >
             <ChevronRightIcon className="w-4 h-4" />
           </button>

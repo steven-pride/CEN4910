@@ -1,9 +1,70 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   AdjustmentsHorizontalIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 
 export default function AdminFilterToolbar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [properties, setProperties] = useState<{ id: number; name: string }[]>([]);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const search = searchParams.get("search") || "";
+  const role = searchParams.get("role") || "All";
+  const propertyId = searchParams.get("propertyId") || "All";
+  const status = searchParams.get("status") || "All";
+
+  // Fetch properties for the dropdown filter
+  useEffect(() => {
+    async function loadProperties() {
+      try {
+        const res = await fetch("/api/properties");
+        if (res.ok) {
+          const json = await res.json();
+          setProperties(json.data || []);
+        }
+      } catch (err) {
+        console.error("Failed to load properties:", err);
+      }
+    }
+    loadProperties();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const updateParam = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (!value || value === "All") {
+      params.delete(key);
+    } else {
+      params.set(key, value);
+    }
+    params.delete("page"); // Reset page when filters change
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      updateParam("search", val);
+    }, 300);
+  };
+
   return (
     <div className="flex flex-col gap-3 p-4 bg-white border border-slate-200 rounded-lg md:flex-row md:items-center md:justify-between">
       {/* Search Input */}
@@ -13,7 +74,9 @@ export default function AdminFilterToolbar() {
         </div>
         <input
           type="text"
-          placeholder="Search by name, email or building..."
+          defaultValue={search}
+          onChange={handleInputChange}
+          placeholder="Search by name or email..."
           className="w-full h-10 pl-9 pr-4 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -21,30 +84,32 @@ export default function AdminFilterToolbar() {
       {/* Filter Controls Row */}
       <div className="flex flex-wrap items-center gap-3">
         <select
-          defaultValue="All"
+          value={role}
+          onChange={(e) => updateParam("role", e.target.value)}
           className="h-10 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="All">All Roles</option>
-          <option value="Admin">Admin</option>
-          <option value="Property Manager">Property Manager</option>
-          <option value="Read-Only Analyst">Read-Only Analyst</option>
+          <option value="admin">Admin</option>
+          <option value="property_manager">Property Manager</option>
+          <option value="analyzer">Read-Only Analyst</option>
         </select>
 
         <select
-          defaultValue="All"
+          value={propertyId}
+          onChange={(e) => updateParam("propertyId", e.target.value)}
           className="h-10 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="All">All Properties</option>
-          <option value="Orlando City Hall">Orlando City Hall</option>
-          <option value="Orange County Convention Center">Orange County Convention Center</option>
-          <option value="Dr. Phillips Center">Dr. Phillips Center</option>
-          <option value="Amway Center">Amway Center</option>
-          <option value="Citrus Center">Citrus Center</option>
-          <option value="SunTrust Center">SunTrust Center</option>
+          {properties.map((prop) => (
+            <option key={prop.id} value={prop.id}>
+              {prop.name}
+            </option>
+          ))}
         </select>
 
         <select
-          defaultValue="All"
+          value={status}
+          onChange={(e) => updateParam("status", e.target.value)}
           className="h-10 px-3 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="All">All Statuses</option>
@@ -55,8 +120,7 @@ export default function AdminFilterToolbar() {
         <button
           type="button"
           className="flex items-center justify-center w-10 h-10 text-slate-500 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          title="Toggle advanced filters"
-          aria-label="Toggle advanced filters"
+          title="Filter settings"
         >
           <AdjustmentsHorizontalIcon className="w-4 h-4" />
         </button>
