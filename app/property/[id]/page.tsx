@@ -1,6 +1,7 @@
-import { ChartNoAxesCombined, Clock, Download, Ruler, Users, FileUp, FilePen } from "lucide-react";
+import { ChartNoAxesCombined, Clock, Ruler, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/app/property/components/PageHeader";
+import { PropertyHeaderActions } from "@/app/property/components/PropertyHeaderActions";
 import { StatCard } from "@/app/property/components/StatCard";
 import { ChartCard } from "@/app/property/components/ChartCard";
 import { SectionHeader } from "@/app/property/components/SectionHeader";
@@ -50,12 +51,10 @@ export default async function PropertyPage({
         title={property.name}
         subtitle={address}
         actions={
-          <>
-            <Button variant="outline"><FileUp className="text-primary" />Bulk Import Meters</Button>
-            <Button variant="outline"><FileUp className="text-primary" />Bulk Import Meter Readings</Button>
-            <Button variant="teal"><Download /> Export Property Details</Button>
-            <Button><FilePen />Edit Data for Property</Button>
-          </>
+          <PropertyHeaderActions
+            propertyId={property.id}
+            propertyName={property.name}
+          />
         }
       />
 
