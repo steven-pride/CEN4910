@@ -1,37 +1,84 @@
+"use client";
+
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import {
+  FormEvent,
+  use,
+  useEffect,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
 
-async function updateProperty(formData: FormData) {
-  "use server";
+type Property = {
+  propertyId: number;
+  name: string;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  stateProvince: string | null;
+  postalCode: string | null;
+  irrigatedArea: number | null;
+  yearBuilt: number | null;
+  occupancyPercent: number | null;
+  numberOfBuildings: number | null;
+};
 
-  const supabase = await createClient();
+export default function EditPropertyPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const router = useRouter();
 
-  const { data: auth } = await supabase.auth.getClaims();
-  const userId = auth?.claims?.sub;
+  const [property, setProperty] =
+    useState<Property | null>(null);
 
-  if (!userId) {
-    redirect("/login");
-  }
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const propertyId = String(formData.get("property_id") || "");
-  const propertyName = String(
-    formData.get("property_name") || ""
-  ).trim();
+  const inputClass =
+    "mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
 
-  if (!propertyId) {
-    redirect("/property/manage");
-  }
+  useEffect(() => {
+    async function loadProperty() {
+      try {
+        setLoading(true);
+        setError("");
 
-  if (!propertyName) {
-    redirect(
-      `/property/${propertyId}/manage-edit?error=${encodeURIComponent(
-        "Property name is required"
-      )}`
-    );
-  }
+        const response = await fetch(
+          `/api/properties/${id}`,
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
 
-  const numberValue = (name: string) => {
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.error || "Unable to load property."
+          );
+        }
+
+        setProperty(result.data);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load property."
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProperty();
+  }, [id]);
+
+  function numberValue(formData: FormData, name: string) {
     const value = String(formData.get(name) || "").trim();
 
     if (!value) {
@@ -39,119 +86,132 @@ async function updateProperty(formData: FormData) {
     }
 
     const parsed = Number(value);
+
     return Number.isNaN(parsed) ? null : parsed;
-  };
-
-  const { data, error } = await supabase
-    .from("property")
-    .update({
-      property_name: propertyName,
-      address_line1:
-        String(formData.get("address_line1") || "").trim() || null,
-      address_line2:
-        String(formData.get("address_line2") || "").trim() || null,
-      city:
-        String(formData.get("city") || "").trim() || null,
-      state_province:
-        String(formData.get("state_province") || "").trim() || null,
-      postal_code:
-        String(formData.get("postal_code") || "").trim() || null,
-      irrigated_area: numberValue("irrigated_area"),
-      year_built: numberValue("year_built"),
-      occupancy_percent: numberValue("occupancy_percent"),
-      number_of_buildings: numberValue("number_of_buildings"),
-    })
-    .eq("property_id", Number(propertyId))
-    .select();
-
-  if (error) {
-    redirect(
-      `/property/${propertyId}/manage-edit?error=${encodeURIComponent(
-        error.message
-      )}`
-    );
   }
 
-  if (!data?.length) {
-    redirect(
-      `/property/${propertyId}/manage-edit?error=${encodeURIComponent(
-        "Property not found or you do not have permission to edit it."
-      )}`
-    );
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+
+    try {
+      setSaving(true);
+      setError("");
+
+      const formData = new FormData(event.currentTarget);
+
+      const name = String(
+        formData.get("property_name") || ""
+      ).trim();
+
+      if (!name) {
+        setError("Property name is required.");
+        return;
+      }
+
+      const payload = {
+        name,
+
+        addressLine1: String(
+          formData.get("address_line1") || ""
+        ).trim(),
+
+        addressLine2: String(
+          formData.get("address_line2") || ""
+        ).trim(),
+
+        city: String(
+          formData.get("city") || ""
+        ).trim(),
+
+        stateProvince: String(
+          formData.get("state_province") || ""
+        ).trim(),
+
+        postalCode: String(
+          formData.get("postal_code") || ""
+        ).trim(),
+
+        irrigatedArea: numberValue(
+          formData,
+          "irrigated_area"
+        ),
+
+        yearBuilt: numberValue(
+          formData,
+          "year_built"
+        ),
+
+        occupancyPercent: numberValue(
+          formData,
+          "occupancy_percent"
+        ),
+
+        numberOfBuildings: numberValue(
+          formData,
+          "number_of_buildings"
+        ),
+      };
+
+      const response = await fetch(
+        `/api/properties/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || "Unable to update property."
+        );
+      }
+
+      router.push("/property/manage");
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to update property."
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
-  redirect("/property/manage");
-}
-
-export default async function EditPropertyPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const { id } = await params;
-  const { error } = await searchParams;
-
-  const propertyId = Number(id);
-
-  if (!Number.isFinite(propertyId)) {
-    notFound();
-  }
-
-  const supabase = await createClient();
-
-  const { data: auth } = await supabase.auth.getClaims();
-  const userId = auth?.claims?.sub;
-
-  if (!userId) {
-    redirect("/login");
-  }
-
-  const { data: profile } = await supabase
-    .from("user_profile")
-    .select("role")
-    .eq("user_id", userId)
-    .single();
-
-  const canEdit =
-    profile?.role === "admin" ||
-    profile?.role === "property_manager";
-
-  if (!canEdit) {
+  if (loading) {
     return (
       <main className="mx-auto max-w-3xl p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          You do not have permission to edit properties.
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+          Loading property...
         </div>
       </main>
     );
   }
 
-  const { data: property } = await supabase
-    .from("property")
-    .select(`
-      property_id,
-      property_name,
-      address_line1,
-      address_line2,
-      city,
-      state_province,
-      postal_code,
-      irrigated_area,
-      year_built,
-      occupancy_percent,
-      number_of_buildings
-    `)
-    .eq("property_id", propertyId)
-    .single();
-
   if (!property) {
-    notFound();
-  }
+    return (
+      <main className="mx-auto max-w-3xl space-y-4 p-6">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+          {error || "Property not found."}
+        </div>
 
-  const inputClass =
-    "mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+        <Link
+          href="/property/manage"
+          className="text-sm font-semibold text-blue-600 hover:underline"
+        >
+          ← Back to Property Management
+        </Link>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-6">
@@ -168,7 +228,7 @@ export default async function EditPropertyPage({
         </h1>
 
         <p className="mt-1 text-sm text-slate-500">
-          Update property #{property.property_id}.
+          Update property #{property.propertyId}.
         </p>
       </div>
 
@@ -179,15 +239,9 @@ export default async function EditPropertyPage({
       )}
 
       <form
-        action={updateProperty}
+        onSubmit={handleSubmit}
         className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
       >
-        <input
-          type="hidden"
-          name="property_id"
-          value={property.property_id}
-        />
-
         <div>
           <label
             htmlFor="property_name"
@@ -200,40 +254,52 @@ export default async function EditPropertyPage({
             id="property_name"
             name="property_name"
             required
-            defaultValue={property.property_name ?? ""}
+            defaultValue={property.name ?? ""}
             className={inputClass}
           />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label htmlFor="address_line1" className="text-sm font-semibold text-slate-700">
+            <label
+              htmlFor="address_line1"
+              className="text-sm font-semibold text-slate-700"
+            >
               Address Line 1
             </label>
+
             <input
               id="address_line1"
               name="address_line1"
-              defaultValue={property.address_line1 ?? ""}
+              defaultValue={property.addressLine1 ?? ""}
               className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="address_line2" className="text-sm font-semibold text-slate-700">
+            <label
+              htmlFor="address_line2"
+              className="text-sm font-semibold text-slate-700"
+            >
               Address Line 2
             </label>
+
             <input
               id="address_line2"
               name="address_line2"
-              defaultValue={property.address_line2 ?? ""}
+              defaultValue={property.addressLine2 ?? ""}
               className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="city" className="text-sm font-semibold text-slate-700">
+            <label
+              htmlFor="city"
+              className="text-sm font-semibold text-slate-700"
+            >
               City
             </label>
+
             <input
               id="city"
               name="city"
@@ -243,47 +309,63 @@ export default async function EditPropertyPage({
           </div>
 
           <div>
-            <label htmlFor="state_province" className="text-sm font-semibold text-slate-700">
+            <label
+              htmlFor="state_province"
+              className="text-sm font-semibold text-slate-700"
+            >
               State / Province
             </label>
+
             <input
               id="state_province"
               name="state_province"
-              defaultValue={property.state_province ?? ""}
+              defaultValue={property.stateProvince ?? ""}
               className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="postal_code" className="text-sm font-semibold text-slate-700">
+            <label
+              htmlFor="postal_code"
+              className="text-sm font-semibold text-slate-700"
+            >
               Postal Code
             </label>
+
             <input
               id="postal_code"
               name="postal_code"
-              defaultValue={property.postal_code ?? ""}
+              defaultValue={property.postalCode ?? ""}
               className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="year_built" className="text-sm font-semibold text-slate-700">
+            <label
+              htmlFor="year_built"
+              className="text-sm font-semibold text-slate-700"
+            >
               Year Built
             </label>
+
             <input
               id="year_built"
               name="year_built"
               type="number"
               min="1800"
-              defaultValue={property.year_built ?? ""}
+              defaultValue={property.yearBuilt ?? ""}
               className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="occupancy_percent" className="text-sm font-semibold text-slate-700">
+            <label
+              htmlFor="occupancy_percent"
+              className="text-sm font-semibold text-slate-700"
+            >
               Occupancy (%)
             </label>
+
             <input
               id="occupancy_percent"
               name="occupancy_percent"
@@ -291,36 +373,48 @@ export default async function EditPropertyPage({
               min="0"
               max="100"
               step="0.01"
-              defaultValue={property.occupancy_percent ?? ""}
+              defaultValue={
+                property.occupancyPercent ?? ""
+              }
               className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="number_of_buildings" className="text-sm font-semibold text-slate-700">
+            <label
+              htmlFor="number_of_buildings"
+              className="text-sm font-semibold text-slate-700"
+            >
               Number of Buildings
             </label>
+
             <input
               id="number_of_buildings"
               name="number_of_buildings"
               type="number"
               min="0"
-              defaultValue={property.number_of_buildings ?? ""}
+              defaultValue={
+                property.numberOfBuildings ?? ""
+              }
               className={inputClass}
             />
           </div>
 
           <div>
-            <label htmlFor="irrigated_area" className="text-sm font-semibold text-slate-700">
+            <label
+              htmlFor="irrigated_area"
+              className="text-sm font-semibold text-slate-700"
+            >
               Irrigated Area
             </label>
+
             <input
               id="irrigated_area"
               name="irrigated_area"
               type="number"
               min="0"
               step="0.01"
-              defaultValue={property.irrigated_area ?? ""}
+              defaultValue={property.irrigatedArea ?? ""}
               className={inputClass}
             />
           </div>
@@ -336,9 +430,10 @@ export default async function EditPropertyPage({
 
           <button
             type="submit"
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            disabled={saving}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save Changes
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </form>

@@ -1,139 +1,108 @@
+"use client";
+
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { useEffect, useState } from "react";
 
-// ---------------------------------------------------------------------------
-// DELETE PROPERTY
-// ---------------------------------------------------------------------------
-async function deleteProperty(formData: FormData) {
-  "use server";
+type Property = {
+  propertyId: number;
+  name: string;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  stateProvince: string | null;
+  postalCode: string | null;
+  irrigatedArea: number | null;
+  yearBuilt: number | null;
+  occupancyPercent: number | null;
+  numberOfBuildings: number | null;
+};
 
-  const supabase = await createClient();
+export default function PropertyManagementPage() {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  // Make sure the user is signed in.
-  const { data: auth } = await supabase.auth.getClaims();
-  const userId = auth?.claims?.sub;
+  async function loadProperties() {
+    try {
+      setLoading(true);
+      setError("");
 
-  if (!userId) {
-    redirect("/login");
+      const response = await fetch("/api/properties", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || "Unable to load properties."
+        );
+      }
+
+      setProperties(result.data || []);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load properties."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const propertyId = Number(formData.get("property_id"));
+  useEffect(() => {
+    loadProperties();
+  }, []);
 
-  if (!Number.isFinite(propertyId)) {
-    redirect("/property/manage");
-  }
-
-  // Delete the property.
-  // RLS still determines whether this user is actually allowed to delete it.
-  const { data, error } = await supabase
-    .from("property")
-    .delete()
-    .eq("property_id", propertyId)
-    .select();
-
-  if (error) {
-    redirect(
-      `/property/manage?error=${encodeURIComponent(error.message)}`
+  async function handleDelete(propertyId: number) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this property?"
     );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingId(propertyId);
+      setError("");
+
+      const response = await fetch(
+        `/api/properties/${propertyId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || "Unable to delete property."
+        );
+      }
+
+      setProperties((currentProperties) =>
+        currentProperties.filter(
+          (property) => property.propertyId !== propertyId
+        )
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to delete property."
+      );
+    } finally {
+      setDeletingId(null);
+    }
   }
 
-  // Supabase/RLS can return zero affected rows without throwing an error.
-  if (!data?.length) {
-    redirect(
-      `/property/manage?error=${encodeURIComponent(
-        "Property not found or you do not have permission to delete it."
-      )}`
-    );
-  }
-
-  redirect("/property/manage");
-}
-
-// ---------------------------------------------------------------------------
-// PROPERTY MANAGEMENT PAGE
-// ---------------------------------------------------------------------------
-export default async function PropertyManagementPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const { error: pageError } = await searchParams;
-
-  const supabase = await createClient();
-
-  // -------------------------------------------------------------------------
-  // Authentication
-  // -------------------------------------------------------------------------
-  const { data: auth } = await supabase.auth.getClaims();
-  const userId = auth?.claims?.sub;
-
-  if (!userId) {
-    redirect("/login");
-  }
-
-  // -------------------------------------------------------------------------
-  // Get current user's role
-  // -------------------------------------------------------------------------
-  const { data: profile } = await supabase
-    .from("user_profile")
-    .select("role")
-    .eq("user_id", userId)
-    .single();
-
-  if (!profile) {
-    return (
-      <main className="p-6">
-        <p>No profile found for your account.</p>
-      </main>
-    );
-  }
-
-  // -------------------------------------------------------------------------
-  // READ PROPERTIES
-  // -------------------------------------------------------------------------
-  const { data: properties, error } = await supabase
-    .from("property")
-    .select(`
-      property_id,
-      property_name,
-      address_line1,
-      address_line2,
-      city,
-      state_province,
-      postal_code,
-      irrigated_area,
-      year_built,
-      occupancy_percent,
-      number_of_buildings
-    `)
-    .order("property_name", { ascending: true });
-
-  if (error) {
-    return (
-      <main className="mx-auto max-w-7xl p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          Unable to load properties: {error.message}
-        </div>
-      </main>
-    );
-  }
-
-  // -------------------------------------------------------------------------
-  // Role permissions
-  // -------------------------------------------------------------------------
-  const isAdmin = profile.role === "admin";
-
-  const canEdit =
-    profile.role === "admin" ||
-    profile.role === "property_manager";
-
-  // -------------------------------------------------------------------------
-  // PAGE
-  // -------------------------------------------------------------------------
   return (
     <main className="mx-auto max-w-7xl space-y-6 p-6">
-      {/* HEADER */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
@@ -145,141 +114,125 @@ export default async function PropertyManagementPage({
           </p>
         </div>
 
-        {isAdmin && (
-          <Link
-            href="/property/new"
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            + New Property
-          </Link>
-        )}
+        <Link
+          href="/property/new"
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          + New Property
+        </Link>
       </div>
 
-      {/* ERROR MESSAGE */}
-      {pageError && (
+      {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {pageError}
+          {error}
         </div>
       )}
 
-      {/* PROPERTY TABLE */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-        <table className="w-full min-w-[1000px]">
-          <thead className="bg-slate-100 text-left">
-            <tr className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-              <th className="px-4 py-3">ID</th>
-              <th className="px-4 py-3">Property</th>
-              <th className="px-4 py-3">Location</th>
-              <th className="px-4 py-3">Year Built</th>
-              <th className="px-4 py-3">Occupancy</th>
-              <th className="px-4 py-3">Buildings</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
+      {loading ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+          Loading properties...
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+          <table className="w-full min-w-[1000px]">
+            <thead className="bg-slate-100 text-left">
+              <tr className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                <th className="px-4 py-3">ID</th>
+                <th className="px-4 py-3">Property</th>
+                <th className="px-4 py-3">Location</th>
+                <th className="px-4 py-3">Year Built</th>
+                <th className="px-4 py-3">Occupancy</th>
+                <th className="px-4 py-3">Buildings</th>
+                <th className="px-4 py-3 text-right">
+                  Actions
+                </th>
+              </tr>
+            </thead>
 
-          <tbody>
-            {(properties ?? []).map((property) => (
-              <tr
-                key={property.property_id}
-                className="border-t border-slate-200 hover:bg-slate-50"
-              >
-                {/* PROPERTY ID */}
-                <td className="px-4 py-4 text-sm">
-                  {property.property_id}
-                </td>
+            <tbody>
+              {properties.map((property) => (
+                <tr
+                  key={property.propertyId}
+                  className="border-t border-slate-200 hover:bg-slate-50"
+                >
+                  <td className="px-4 py-4 text-sm">
+                    {property.propertyId}
+                  </td>
 
-                {/* PROPERTY NAME + ADDRESS */}
-                <td className="px-4 py-4">
-                  <p className="font-semibold text-slate-900">
-                    {property.property_name}
-                  </p>
+                  <td className="px-4 py-4">
+                    <p className="font-semibold text-slate-900">
+                      {property.name}
+                    </p>
 
-                  <p className="mt-1 text-xs text-slate-500">
-                    {property.address_line1 || "No address"}
+                    <p className="mt-1 text-xs text-slate-500">
+                      {property.addressLine1 || "No address"}
+                      {property.addressLine2
+                        ? `, ${property.addressLine2}`
+                        : ""}
+                    </p>
+                  </td>
 
-                    {property.address_line2
-                      ? `, ${property.address_line2}`
-                      : ""}
-                  </p>
-                </td>
+                  <td className="px-4 py-4 text-sm text-slate-600">
+                    {[
+                      property.city,
+                      property.stateProvince,
+                      property.postalCode,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "—"}
+                  </td>
 
-                {/* LOCATION */}
-                <td className="px-4 py-4 text-sm text-slate-600">
-                  {[
-                    property.city,
-                    property.state_province,
-                    property.postal_code,
-                  ]
-                    .filter(Boolean)
-                    .join(", ") || "—"}
-                </td>
+                  <td className="px-4 py-4 text-sm">
+                    {property.yearBuilt ?? "—"}
+                  </td>
 
-                {/* YEAR BUILT */}
-                <td className="px-4 py-4 text-sm">
-                  {property.year_built ?? "—"}
-                </td>
+                  <td className="px-4 py-4 text-sm">
+                    {property.occupancyPercent !== null
+                      ? `${property.occupancyPercent}%`
+                      : "—"}
+                  </td>
 
-                {/* OCCUPANCY */}
-                <td className="px-4 py-4 text-sm">
-                  {property.occupancy_percent !== null
-                    ? `${property.occupancy_percent}%`
-                    : "—"}
-                </td>
+                  <td className="px-4 py-4 text-sm">
+                    {property.numberOfBuildings ?? "—"}
+                  </td>
 
-                {/* NUMBER OF BUILDINGS */}
-                <td className="px-4 py-4 text-sm">
-                  {property.number_of_buildings ?? "—"}
-                </td>
-
-                {/* ACTIONS */}
-                <td className="px-4 py-4">
-                  <div className="flex justify-end gap-2">
-                    {/* EDIT */}
-                    {canEdit && (
+                  <td className="px-4 py-4">
+                    <div className="flex justify-end gap-2">
                       <Link
-                        href={`/property/${property.property_id}/manage-edit`}
+                        href={`/property/${property.propertyId}/manage-edit`}
                         className="rounded-md bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200"
                       >
                         Edit
                       </Link>
-                    )}
 
-                    {/* DELETE - ADMIN ONLY */}
-                    {isAdmin && (
-                      <form action={deleteProperty}>
-                        <input
-                          type="hidden"
-                          name="property_id"
-                          value={property.property_id}
-                        />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDelete(property.propertyId)
+                        }
+                        disabled={
+                          deletingId === property.propertyId
+                        }
+                        className="rounded-md bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {deletingId === property.propertyId
+                          ? "Deleting..."
+                          : "Delete"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-                        <button
-                          type="submit"
-                          className="rounded-md bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
-                        >
-                          Delete
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* EMPTY STATE */}
-        {(properties ?? []).length === 0 && (
-          <p className="p-8 text-center text-sm text-slate-500">
-            No properties found.
-          </p>
-        )}
-      </div>
-
-      {/* CURRENT ROLE */}
-      <p className="text-xs text-slate-500">
-        Signed in as: {profile.role}
-      </p>
+          {properties.length === 0 && (
+            <p className="p-8 text-center text-sm text-slate-500">
+              No properties found.
+            </p>
+          )}
+        </div>
+      )}
     </main>
   );
 }

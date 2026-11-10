@@ -1,26 +1,19 @@
+"use client";
+
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 
-async function createProperty(formData: FormData) {
-  "use server";
+export default function NewPropertyPage() {
+  const router = useRouter();
 
-  const supabase = await createClient();
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const { data: auth } = await supabase.auth.getClaims();
-  const userId = auth?.claims?.sub;
+  const inputClass =
+    "mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
 
-  if (!userId) {
-    redirect("/login");
-  }
-
-  const propertyName = String(formData.get("property_name") || "").trim();
-
-  if (!propertyName) {
-    redirect("/property/new?error=Property name is required");
-  }
-
-  const numberValue = (name: string) => {
+  function numberValue(formData: FormData, name: string) {
     const value = String(formData.get(name) || "").trim();
 
     if (!value) {
@@ -30,67 +23,91 @@ async function createProperty(formData: FormData) {
     const parsed = Number(value);
 
     return Number.isNaN(parsed) ? null : parsed;
-  };
-
-  const { error } = await supabase.from("property").insert({
-    property_name: propertyName,
-    address_line1:
-      String(formData.get("address_line1") || "").trim() || null,
-    address_line2:
-      String(formData.get("address_line2") || "").trim() || null,
-    city:
-      String(formData.get("city") || "").trim() || null,
-    state_province:
-      String(formData.get("state_province") || "").trim() || null,
-    postal_code:
-      String(formData.get("postal_code") || "").trim() || null,
-    irrigated_area: numberValue("irrigated_area"),
-    year_built: numberValue("year_built"),
-    occupancy_percent: numberValue("occupancy_percent"),
-    number_of_buildings: numberValue("number_of_buildings"),
-  });
-
-  if (error) {
-    redirect(`/property/new?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/property/manage");
-}
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
 
-export default async function NewPropertyPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
-  const { error } = await searchParams;
+    try {
+      setSaving(true);
+      setError("");
 
-  const supabase = await createClient();
+      const formData = new FormData(event.currentTarget);
 
-  const { data: auth } = await supabase.auth.getClaims();
-  const userId = auth?.claims?.sub;
+      const name = String(
+        formData.get("property_name") || ""
+      ).trim();
 
-  if (!userId) {
-    redirect("/login");
+      if (!name) {
+        setError("Property name is required.");
+        return;
+      }
+
+      const payload = {
+        name,
+        addressLine1: String(
+          formData.get("address_line1") || ""
+        ).trim(),
+        addressLine2: String(
+          formData.get("address_line2") || ""
+        ).trim(),
+        city: String(
+          formData.get("city") || ""
+        ).trim(),
+        stateProvince: String(
+          formData.get("state_province") || ""
+        ).trim(),
+        postalCode: String(
+          formData.get("postal_code") || ""
+        ).trim(),
+        irrigatedArea: numberValue(
+          formData,
+          "irrigated_area"
+        ),
+        yearBuilt: numberValue(
+          formData,
+          "year_built"
+        ),
+        occupancyPercent: numberValue(
+          formData,
+          "occupancy_percent"
+        ),
+        numberOfBuildings: numberValue(
+          formData,
+          "number_of_buildings"
+        ),
+      };
+
+      const response = await fetch("/api/properties", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || "Unable to create property."
+        );
+      }
+
+      router.push("/property/manage");
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to create property."
+      );
+    } finally {
+      setSaving(false);
+    }
   }
-
-  const { data: profile } = await supabase
-    .from("user_profile")
-    .select("role")
-    .eq("user_id", userId)
-    .single();
-
-  if (profile?.role !== "admin") {
-    return (
-      <main className="mx-auto max-w-3xl p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
-          Only administrators can create properties.
-        </div>
-      </main>
-    );
-  }
-
-  const inputClass =
-    "mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-6">
@@ -118,7 +135,7 @@ export default async function NewPropertyPage({
       )}
 
       <form
-        action={createProperty}
+        onSubmit={handleSubmit}
         className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
       >
         <div>
@@ -295,9 +312,10 @@ export default async function NewPropertyPage({
 
           <button
             type="submit"
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            disabled={saving}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Create Property
+            {saving ? "Creating..." : "Create Property"}
           </button>
         </div>
       </form>
