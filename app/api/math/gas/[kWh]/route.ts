@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ kWh: number}>}) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ kWh: string}>}) {
 
     const { kWh } = await params;
     const kWhParsed = Number(kWh);
