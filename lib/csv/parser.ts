@@ -86,29 +86,3 @@ export function parseCsv(text: string): ParsedCsv {
     rawRows: dataRows,
   };
 }
-
-/**
- * Escapes a single CSV value.
- */
-function escapeCsvValue(val: unknown): string {
-  if (val === null || val === undefined) return "";
-  const str = String(val);
-  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
-
-/**
- * Generates a CSV formatted string from headers and records.
- */
-export function generateCsv(
-  headers: string[],
-  data: Record<string, unknown>[]
-): string {
-  const headerLine = headers.map(escapeCsvValue).join(",");
-  const rowLines = data.map((row) =>
-    headers.map((h) => escapeCsvValue(row[h])).join(",")
-  );
-  return [headerLine, ...rowLines].join("\n");
-}

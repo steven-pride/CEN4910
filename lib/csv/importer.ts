@@ -27,32 +27,19 @@ interface UserContext {
  */
 async function loadMeterMap(propertyId?: number): Promise<Record<string, number>> {
   const map: Record<string, number> = {};
-  try {
-    const supabase = createAdminClient();
-    let query = supabase.from("meter").select("meter_id, meter_name, property_id");
-    if (propertyId) {
-      query = query.eq("property_id", propertyId);
-    }
-    const { data } = await query;
-    if (data && Array.isArray(data)) {
-      for (const m of data) {
-        if (m.meter_name) {
-          map[m.meter_name.toLowerCase().trim()] = m.meter_id;
-        }
+  const supabase = createAdminClient();
+  let query = supabase.from("meter").select("meter_id, meter_name, property_id");
+  if (propertyId) {
+    query = query.eq("property_id", propertyId);
+  }
+  const { data } = await query;
+  if (data && Array.isArray(data)) {
+    for (const m of data) {
+      if (m.meter_name) {
+        map[m.meter_name.toLowerCase().trim()] = m.meter_id;
       }
     }
-  } catch {
-    // If database or meter table is not accessible, fall back
   }
-
-  // Fallback defaults if table is empty or unseeded
-  if (Object.keys(map).length === 0) {
-    map["electric main feed"] = 1;
-    map["gas heating unit"] = 2;
-    map["natural gas boiler"] = 2;
-    map["city water inflow"] = 3;
-  }
-
   return map;
 }
 
@@ -61,26 +48,14 @@ async function loadMeterMap(propertyId?: number): Promise<Record<string, number>
  */
 async function loadUnitMap(): Promise<Record<string, number>> {
   const map: Record<string, number> = {};
-  try {
-    const supabase = createAdminClient();
-    const { data } = await supabase.from("unit").select("unit_id, unit_name");
-    if (data && Array.isArray(data)) {
-      for (const u of data) {
-        if (u.unit_name) {
-          map[u.unit_name.toLowerCase().trim()] = u.unit_id;
-        }
+  const supabase = createAdminClient();
+  const { data } = await supabase.from("unit").select("unit_id, unit_name");
+  if (data && Array.isArray(data)) {
+    for (const u of data) {
+      if (u.unit_name) {
+        map[u.unit_name.toLowerCase().trim()] = u.unit_id;
       }
     }
-  } catch {
-    // If unit table is not accessible, fall back to default map
-  }
-
-  // If map is empty (e.g. database unseeded or offline), provide standard fallback units
-  if (Object.keys(map).length === 0) {
-    map["kwh"] = 1;
-    map["therms"] = 2;
-    map["ccf"] = 3;
-    map["gallons"] = 4;
   }
   return map;
 }

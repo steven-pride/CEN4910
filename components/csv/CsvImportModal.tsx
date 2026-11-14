@@ -9,6 +9,7 @@ import {
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { parseCsv } from "@/lib/csv/parser";
+import { pollJob } from "@/lib/utils/polling";
 
 export interface CsvImportModalProps {
   isOpen: boolean;
@@ -64,31 +65,30 @@ export function CsvImportModal({
 
     let isPolling = true;
 
-    const pollStatus = async () => {
-      try {
-        const res = await fetch(`/api/import/jobs/${jobId}`);
-        if (!res.ok) return;
-        const data: JobStatusResponse = await res.json();
-
+    pollJob<JobStatusResponse>(`/api/import/jobs/${jobId}`, {
+      intervalMs: 1500,
+      onUpdate: (data) => {
         if (isPolling) {
           setJobStatus(data);
-          if (data.status === "completed" || data.status === "failed") {
-            setIsSubmitting(false);
-            if (data.status === "completed" && onSuccess) {
-              onSuccess();
-            }
-          } else {
-            setTimeout(pollStatus, 1500);
+        }
+      },
+    })
+      .then((data) => {
+        if (isPolling) {
+          setJobStatus(data);
+          setIsSubmitting(false);
+          if (data.status === "completed" && onSuccess) {
+            onSuccess();
           }
         }
-      } catch {
+      })
+      .catch((err: unknown) => {
         if (isPolling) {
-          setTimeout(pollStatus, 2000);
+          setIsSubmitting(false);
+          const msg = err instanceof Error ? err.message : "Polling failed";
+          setErrorMessage(msg);
         }
-      }
-    };
-
-    pollStatus();
+      });
 
     return () => {
       isPolling = false;

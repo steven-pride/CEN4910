@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Download, FilePen, FileUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CsvImportModal from "@/components/csv/CsvImportModal";
+import { triggerAsyncExport } from "@/lib/utils/download";
 
 export interface PropertyHeaderActionsProps {
   propertyId: string | number;
@@ -17,9 +18,24 @@ export function PropertyHeaderActions({
 }: PropertyHeaderActionsProps) {
   const router = useRouter();
   const [importType, setImportType] = useState<"meters" | "readings" | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleImportSuccess = () => {
     router.refresh();
+  };
+
+  const handleExportProperty = async () => {
+    try {
+      setIsExporting(true);
+      await triggerAsyncExport("/api/export/properties", {
+        propertyId,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Export failed";
+      alert(`Export failed: ${msg}`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -40,8 +56,9 @@ export function PropertyHeaderActions({
         Bulk Import Meter Readings
       </Button>
 
-      <Button variant="teal">
-        <Download /> Export Property Details
+      <Button variant="teal" onClick={handleExportProperty} disabled={isExporting}>
+        <Download className={isExporting ? "animate-bounce" : ""} />
+        {isExporting ? "Exporting..." : "Export Property Data"}
       </Button>
 
       <Button>
