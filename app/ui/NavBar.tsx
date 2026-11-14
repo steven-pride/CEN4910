@@ -10,27 +10,67 @@ import { createClient } from "@/lib/supabase/client";
 export default function NavBar() {
   const pathname = usePathname();
   const [userName, setUserName] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     const supabase = createClient();
 
     const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (user) {
-        const name =
-          user.user_metadata?.full_name ||
-          user.user_metadata?.name ||
-          user.user_metadata?.display_name ||
-          (user.email ? user.email.split("@")[0] : "User");
-        setUserName(name);
+        if (user) {
+          const name =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.user_metadata?.display_name ||
+            (user.email ? user.email.split("@")[0] : "User");
+          setUserName(name);
+
+          let role: string | undefined = user.user_metadata?.role;
+
+          try {
+            const res = await fetch(`/api/userProfiles/${user.id}`);
+            if (res.ok) {
+              const profileData = await res.json();
+              if (profileData?.role) {
+                role = profileData.role;
+              }
+            }
+          } catch {
+            // fallback to metadata if profile fetch fails
+          }
+
+          setIsAdmin(role?.toLowerCase() === "admin");
+        } else {
+          setUserName("");
+          setIsAdmin(false);
+        }
+      } catch {
+        setUserName("");
+        setIsAdmin(false);
       }
     };
 
     fetchUser();
-  }, []);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        fetchUser();
+      } else {
+        setUserName("");
+        setIsAdmin(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [pathname]);
 
   // Hide navbar on login and register pages
   if (pathname === "/login" || pathname === "/register") {
@@ -79,15 +119,17 @@ export default function NavBar() {
             >
               Add/Edit Property
             </Link>
-            <Link
-              href="/admin"
-              className={clsx(
-                "px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700",
-                { "bg-blue-800": pathname === "/admin" }
-              )}
-            >
-              User Management
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className={clsx(
+                  "px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700",
+                  { "bg-blue-800": pathname === "/admin" }
+                )}
+              >
+                User Management
+              </Link>
+            )}
           </nav>
         </div>
 
