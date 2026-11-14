@@ -58,7 +58,19 @@ export default function UserManagementTable({
         const res = await fetch("/api/properties");
         if (res.ok) {
           const json = await res.json();
-          setProperties(json.data || []);
+          const list = (json.data || []).map(
+            (prop: {
+              propertyId?: number;
+              id?: number;
+              property_id?: number;
+              name?: string;
+              property_name?: string;
+            }) => ({
+              id: prop.propertyId ?? prop.id ?? prop.property_id ?? 0,
+              name: prop.name ?? prop.property_name ?? `Property #${prop.propertyId ?? prop.id ?? prop.property_id ?? 0}`,
+            })
+          );
+          setProperties(list);
         }
       } catch (err) {
         console.error("Failed to load properties:", err);
