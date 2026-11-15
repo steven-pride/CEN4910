@@ -16,6 +16,7 @@ export interface PortfolioHeaderProps {
   onNewProperty?: () => void;
   onBulkImport?: () => void;
   onExport?: () => void;
+  onImportSuccess?: () => void;
 }
 
 export function PortfolioHeader({
@@ -23,6 +24,7 @@ export function PortfolioHeader({
   onNewProperty,
   onBulkImport,
   onExport,
+  onImportSuccess,
 }: PortfolioHeaderProps) {
   const router = useRouter();
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -59,6 +61,7 @@ export function PortfolioHeader({
   };
 
   const handleImportSuccess = () => {
+    onImportSuccess?.();
     router.refresh();
   };
 
@@ -88,11 +91,20 @@ export function PortfolioHeader({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={onNewProperty}
+              onClick={() => onNewProperty ? onNewProperty() : router.push("/property/new")}
               className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-blue-700"
             >
               <PlusCircleIcon className="h-4 w-4" />
               New Property
+            </button>
+
+            <button
+              type="button"
+              onClick={() => router.push("/property/manage")}
+              className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-100"
+            >
+              <BuildingOfficeIcon className="h-4 w-4" />
+              Manage Properties
             </button>
 
             <button
