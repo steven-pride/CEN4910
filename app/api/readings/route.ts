@@ -2,24 +2,89 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 // ---------------------------------------------------------------------------
-// GET - Read all meter readings
+// GET - Read meter readings with filtering and pagination
 // ---------------------------------------------------------------------------
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const { data, error } = await supabase
+    const { searchParams } = new URL(request.url);
+
+    // Filters
+    const meterId = searchParams.get("meterId") || "All";
+    const startDate = searchParams.get("startDate")?.trim() || "";
+    const endDate = searchParams.get("endDate")?.trim() || "";
+
+    // Pagination
+    const page = Math.max(
+      1,
+      parseInt(searchParams.get("page") || "1", 10)
+    );
+
+    const pageSize = Math.max(
+      1,
+      parseInt(searchParams.get("pageSize") || "10", 10)
+    );
+
+    // Build meter reading query
+    let query = supabase
       .from("meter_reading")
-      .select(`
-        meter_reading_id,
-        meter_id,
-        start_date,
-        end_date,
-        usage_quantity,
-        unit,
-        cost
-      `)
-      .order("start_date", { ascending: false });
+      .select(
+        `
+          meter_reading_id,
+          meter_id,
+          start_date,
+          end_date,
+          usage_quantity,
+          unit,
+          cost
+        `,
+        { count: "exact" }
+      );
+
+    // Apply meter filter
+    if (meterId !== "All" && meterId !== "") {
+      const meterIdNumber = Number(meterId);
+
+      if (!Number.isFinite(meterIdNumber)) {
+        return NextResponse.json(
+          {
+            error: "Meter ID must be a valid number.",
+            code: "VALIDATION_ERROR",
+          },
+          { status: 400 }
+        );
+      }
+
+      query = query.eq(
+        "meter_id",
+        meterIdNumber
+      );
+    }
+
+    // Apply start date filter
+    if (startDate) {
+      query = query.gte(
+        "start_date",
+        startDate
+      );
+    }
+
+    // Apply end date filter
+    if (endDate) {
+      query = query.lte(
+        "end_date",
+        endDate
+      );
+    }
+
+    // Calculate pagination range
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, count, error } = await query
+      .order("start_date", { ascending: false })
+      .range(from, to);
 
     if (error) {
       return NextResponse.json(
@@ -30,6 +95,10 @@ export async function GET() {
         { status: 500 }
       );
     }
+
+    const totalCount = count ?? 0;
+    const totalPages =
+      Math.ceil(totalCount / pageSize) || 1;
 
     const readings = (data || []).map((reading) => ({
       meterReadingId: reading.meter_reading_id,
@@ -42,7 +111,15 @@ export async function GET() {
     }));
 
     return NextResponse.json(
-      { data: readings },
+      {
+        data: readings,
+        pagination: {
+          page,
+          pageSize,
+          totalCount,
+          totalPages,
+        },
+      },
       { status: 200 }
     );
   } catch (err: unknown) {
