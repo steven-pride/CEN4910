@@ -2,24 +2,89 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 // ---------------------------------------------------------------------------
-// GET - Read all meters
+// GET - Read meters with filtering and pagination
 // ---------------------------------------------------------------------------
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const { data, error } = await supabase
+    const { searchParams } = new URL(request.url);
+
+    // Filters
+    const search = searchParams.get("search")?.trim() || "";
+    const propertyId = searchParams.get("propertyId") || "All";
+    const meterType = searchParams.get("meterType")?.trim() || "";
+
+    // Pagination
+    const page = Math.max(
+      1,
+      parseInt(searchParams.get("page") || "1", 10)
+    );
+
+    const pageSize = Math.max(
+      1,
+      parseInt(searchParams.get("pageSize") || "10", 10)
+    );
+
+    // Build meter query
+    let query = supabase
       .from("meter")
-      .select(`
-        meter_id,
-        property_id,
-        meter_name,
-        meter_type,
-        default_unit,
-        active_date,
-        inactive_date
-      `)
-      .order("meter_name", { ascending: true });
+      .select(
+        `
+          meter_id,
+          property_id,
+          meter_name,
+          meter_type,
+          default_unit,
+          active_date,
+          inactive_date
+        `,
+        { count: "exact" }
+      );
+
+    // Apply meter name search
+    if (search) {
+      query = query.ilike(
+        "meter_name",
+        `%${search}%`
+      );
+    }
+
+    // Apply property filter
+    if (propertyId !== "All" && propertyId !== "") {
+      const propertyIdNumber = Number(propertyId);
+
+      if (!Number.isFinite(propertyIdNumber)) {
+        return NextResponse.json(
+          {
+            error: "Property ID must be a valid number.",
+            code: "VALIDATION_ERROR",
+          },
+          { status: 400 }
+        );
+      }
+
+      query = query.eq(
+        "property_id",
+        propertyIdNumber
+      );
+    }
+
+    // Apply meter type filter
+    if (meterType) {
+      query = query.ilike(
+        "meter_type",
+        `%${meterType}%`
+      );
+    }
+
+    // Calculate pagination range
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, count, error } = await query
+      .order("meter_name", { ascending: true })
+      .range(from, to);
 
     if (error) {
       return NextResponse.json(
@@ -30,6 +95,10 @@ export async function GET() {
         { status: 500 }
       );
     }
+
+    const totalCount = count ?? 0;
+    const totalPages =
+      Math.ceil(totalCount / pageSize) || 1;
 
     const meters = (data || []).map((meter) => ({
       meterId: meter.meter_id,
@@ -42,7 +111,15 @@ export async function GET() {
     }));
 
     return NextResponse.json(
-      { data: meters },
+      {
+        data: meters,
+        pagination: {
+          page,
+          pageSize,
+          totalCount,
+          totalPages,
+        },
+      },
       { status: 200 }
     );
   } catch (err: unknown) {

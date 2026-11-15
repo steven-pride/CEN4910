@@ -1,27 +1,81 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-// GET - Read all properties
-export async function GET() {
+// GET - Read properties with filtering and pagination
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    const { data, error } = await supabase
+    const { searchParams } = new URL(request.url);
+
+    // Filters
+    const search = searchParams.get("search")?.trim() || "";
+    const city = searchParams.get("city")?.trim() || "";
+    const stateProvince =
+      searchParams.get("stateProvince")?.trim() || "";
+
+    // Pagination
+    const page = Math.max(
+      1,
+      parseInt(searchParams.get("page") || "1", 10)
+    );
+
+    const pageSize = Math.max(
+      1,
+      parseInt(searchParams.get("pageSize") || "10", 10)
+    );
+
+    // Build property query
+    let query = supabase
       .from("property")
-      .select(`
-        property_id,
-        property_name,
-        address_line1,
-        address_line2,
-        city,
-        state_province,
-        postal_code,
-        irrigated_area,
-        year_built,
-        occupancy_percent,
-        number_of_buildings
-      `)
-      .order("property_name", { ascending: true });
+      .select(
+        `
+          property_id,
+          property_name,
+          address_line1,
+          address_line2,
+          city,
+          state_province,
+          postal_code,
+          irrigated_area,
+          year_built,
+          occupancy_percent,
+          number_of_buildings
+        `,
+        { count: "exact" }
+      );
+
+    // Apply property name search filter
+    if (search) {
+      query = query.ilike(
+        "property_name",
+        `%${search}%`
+      );
+    }
+
+    // Apply city filter
+    if (city) {
+      query = query.ilike(
+        "city",
+        `%${city}%`
+      );
+    }
+
+    // Apply state/province filter
+    if (stateProvince) {
+      query = query.ilike(
+        "state_province",
+        `%${stateProvince}%`
+      );
+    }
+
+    // Calculate pagination range
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, count, error } = await query
+      .order("property_name", { ascending: true })
+      .range(from, to);
 
     if (error) {
       return NextResponse.json(
@@ -32,6 +86,10 @@ export async function GET() {
         { status: 500 }
       );
     }
+
+    const totalCount = count ?? 0;
+    const totalPages =
+      Math.ceil(totalCount / pageSize) || 1;
 
     const properties = (data || []).map((property) => ({
       propertyId: property.property_id,
@@ -48,12 +106,22 @@ export async function GET() {
     }));
 
     return NextResponse.json(
-      { data: properties },
+      {
+        data: properties,
+        pagination: {
+          page,
+          pageSize,
+          totalCount,
+          totalPages,
+        },
+      },
       { status: 200 }
     );
   } catch (err: unknown) {
     const message =
-      err instanceof Error ? err.message : "Internal Server Error";
+      err instanceof Error
+        ? err.message
+        : "Internal Server Error";
 
     return NextResponse.json(
       {
@@ -178,7 +246,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (err: unknown) {
     const message =
-      err instanceof Error ? err.message : "Internal Server Error";
+      err instanceof Error
+        ? err.message
+        : "Internal Server Error";
 
     return NextResponse.json(
       {
