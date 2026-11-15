@@ -115,7 +115,6 @@ export function MeterTable({ meters }: { meters: MeterItem[] }) {
                       meterId={m.meterId}
                       meterName={m.name}
                       meterType={m.type}
-                      defaultUnitId={m.defaultUnitId}
                     />
                   </TableCell>
                 </TableRow>
