@@ -137,9 +137,14 @@ export default function CalcsPage() {
       });
 
       const data = await res.json();
-      const value = data.value;
 
-      setLLM(value);
+      if (res.ok) {
+        const value = data.value;
+        setLLM(value);
+      }
+      else {
+        setLLM(-1);
+      }
     }
 
     catch (error) {
