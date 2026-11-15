@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import type { SubmitEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function NewReadingPage() {
+function NewReadingForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [meterId, setMeterId] = useState("");
+  const [meterId, setMeterId] = useState(searchParams.get("meterId") ?? "");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [usageQuantity, setUsageQuantity] = useState("");
@@ -17,7 +19,7 @@ export default function NewReadingPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     try {
@@ -47,18 +49,14 @@ export default function NewReadingPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          result.error || "Unable to create meter reading."
-        );
+        throw new Error(result.error || "Unable to create meter reading.");
       }
 
       router.push("/reading/manage");
       router.refresh();
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to create meter reading."
+        err instanceof Error ? err.message : "Unable to create meter reading."
       );
     } finally {
       setSaving(false);
@@ -167,9 +165,7 @@ export default function NewReadingPage() {
             type="number"
             step="any"
             value={usageQuantity}
-            onChange={(event) =>
-              setUsageQuantity(event.target.value)
-            }
+            onChange={(event) => setUsageQuantity(event.target.value)}
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             placeholder="Example: 1250.5"
           />
@@ -239,5 +235,13 @@ export default function NewReadingPage() {
         </div>
       </form>
     </main>
+  );
+}
+
+export default function NewReadingPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewReadingForm />
+    </Suspense>
   );
 }

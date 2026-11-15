@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Download, FilePen, FileUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import CsvImportModal from "@/components/csv/CsvImportModal";
 import { triggerAsyncExport } from "@/lib/utils/download";
 
@@ -61,9 +63,13 @@ export function PropertyHeaderActions({
         {isExporting ? "Exporting..." : "Export Property Data"}
       </Button>
 
-      <Button>
-        <FilePen /> Edit Data for Property
-      </Button>
+      <Link
+        href={`/property/${propertyId}/manage-edit`}
+        className={cn(buttonVariants(), "inline-flex items-center gap-2")}
+      >
+        <FilePen />
+        Edit Data for Property
+      </Link>
 
       {importType && (
         <CsvImportModal
