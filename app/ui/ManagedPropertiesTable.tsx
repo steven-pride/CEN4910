@@ -18,6 +18,7 @@ import {
 
 export interface ManagedPropertiesTableProps {
   properties?: DashboardProperty[];
+  energyBasis?: "annual" | "observed";
 }
 
 // Temporary benchmark target for demonstration.
@@ -26,6 +27,7 @@ const PAGE_SIZE = 5;
 
 export function ManagedPropertiesTable({
   properties = dashboardProperties,
+  energyBasis = "annual",
 }: ManagedPropertiesTableProps) {
   const [search, setSearch] = useState("");
   const [occupancyFilter, setOccupancyFilter] =
@@ -65,25 +67,22 @@ export function ManagedPropertiesTable({
       const eui = property.eui;
 
       if (
-        energyFilter === "below" &&
+        energyBasis === "annual" && energyFilter === "below" &&
         (eui === null || eui > TARGET_EUI)
       ) {
         return false;
       }
 
       if (
-        energyFilter === "above" &&
+        energyBasis === "annual" && energyFilter === "above" &&
         (eui === null || eui <= TARGET_EUI)
       ) {
         return false;
       }
 
-      if (
-        energyFilter === "missing" &&
-        eui !== null
-      ) {
-        return false;
-      }
+      if (energyFilter === "available" && eui === null) return false;
+
+      if (energyFilter === "missing" && eui !== null) return false;
 
       return true;
     });
@@ -92,6 +91,7 @@ export function ManagedPropertiesTable({
     search,
     occupancyFilter,
     energyFilter,
+    energyBasis,
   ]);
 
   const totalPages = Math.max(
@@ -123,8 +123,7 @@ export function ManagedPropertiesTable({
           </div>
 
           <p className="mt-2 text-xs text-slate-500">
-            Demonstration data based on the property
-            and property_use model.
+            Search and filter your portfolio properties.
           </p>
         </div>
 
@@ -172,8 +171,14 @@ export function ManagedPropertiesTable({
             className="rounded-md bg-slate-100 px-3 py-2.5 text-sm"
           >
             <option value="all">Energy Status: All</option>
-            <option value="below">At or Below Target</option>
-            <option value="above">Above Target</option>
+            {energyBasis === "annual" ? (
+              <>
+                <option value="below">At or Below Annual Target</option>
+                <option value="above">Above Annual Target</option>
+              </>
+            ) : (
+              <option value="available">Has Complete Period Readings</option>
+            )}
             <option value="missing">Missing EUI</option>
           </select>
         </div>
@@ -189,7 +194,7 @@ export function ManagedPropertiesTable({
               <th className="px-4 py-4">Gross Floor Area</th>
               <th className="px-4 py-4">Weekly Hours</th>
               <th className="px-4 py-4">Occupancy</th>
-              <th className="px-4 py-4">Building EUI</th>
+              <th className="px-4 py-4">{energyBasis === "observed" ? "Observed EUI (3 months)" : "Building EUI"}</th>
               <th className="px-4 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -198,7 +203,7 @@ export function ManagedPropertiesTable({
             {visibleProperties.map((property) => {
               const eui = property.eui;
 
-              const aboveTarget =
+              const aboveTarget = energyBasis === "annual" &&
                 eui !== null && eui > TARGET_EUI;
 
               return (

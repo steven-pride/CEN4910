@@ -11,17 +11,23 @@ export interface BuildingBenchmarkCardProps {
   benchmarks?: Benchmark[];
   targetValue?: number;
   targetLabel?: string;
+  showTarget?: boolean;
+  heading?: string;
+  note?: string;
 }
 
 export function BuildingBenchmarkCard({
   benchmarks = defaultBenchmarks,
   targetValue = 65,
   targetLabel,
+  showTarget = true,
+  heading,
+  note,
 }: BuildingBenchmarkCardProps) {
   const scaleMax = Math.max(
-    120,
-    targetValue,
-    ...benchmarks.map((item) => item.value)
+    showTarget ? 120 : 1,
+    showTarget ? targetValue : 0,
+    ...benchmarks.map((item) => showTarget ? item.value : item.value * 1.15)
   );
 
   const targetPosition = Math.min(
@@ -34,22 +40,23 @@ export function BuildingBenchmarkCard({
       <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-start">
         <div>
           <h2 className="text-lg font-bold text-slate-900">
-            Building Comparison Benchmark
-            (Energy Use Intensity - kBtu/sq ft)
+            {heading ?? "Building Comparison Benchmark (Energy Use Intensity - kBtu/sq ft)"}
           </h2>
 
           <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-slate-600">
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
-              Building EUI
+              {showTarget ? "Building EUI" : "Observed (partial-period) EUI"}
             </span>
 
-            <span className="flex items-center gap-1.5">
-              <span className="h-[3px] w-4 rounded bg-red-600" />
-              {targetLabel ??
-                `Target Benchmark (${targetValue} kBtu/sq ft)`}
-            </span>
+            {showTarget && (
+              <span className="flex items-center gap-1.5">
+                <span className="h-[3px] w-4 rounded bg-red-600" />
+                {targetLabel ?? `Target Benchmark (${targetValue} kBtu/sq ft)`}
+              </span>
+            )}
           </div>
+          {note && <p className="mt-2 text-xs text-slate-500">{note}</p>}
         </div>
       </div>
 
@@ -73,10 +80,10 @@ export function BuildingBenchmarkCard({
                 ? ((eui - targetValue) / targetValue) * 100
                 : null;
 
-            const danger = eui > targetValue;
+            const danger = showTarget && eui > targetValue;
 
             const good =
-              deviation !== null && deviation <= -10;
+              showTarget && deviation !== null && deviation <= -10;
 
             const barWidth = Math.min(
               100,
@@ -105,21 +112,24 @@ export function BuildingBenchmarkCard({
                     }`}
                   >
                     {eui.toFixed(1)} kBtu/sq ft
-                    {" ("}
-                    {deviation === null
-                      ? "No valid target"
-                      : `${deviation > 0 ? "+" : ""}${deviation.toFixed(1)}% vs Target`}
-                    {")"}
+                    {showTarget && (
+                      <>
+                        {" ("}
+                        {deviation === null ? "No valid target"
+                          : `${deviation > 0 ? "+" : ""}${deviation.toFixed(1)}% vs Target`}
+                        {")"}
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className="relative h-4 overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className="absolute top-0 z-10 h-full w-[2px] bg-red-500"
-                    style={{
-                      left: `${targetPosition}%`,
-                    }}
-                  />
+                  {showTarget && (
+                    <div
+                      className="absolute top-0 z-10 h-full w-[2px] bg-red-500"
+                      style={{ left: `${targetPosition}%` }}
+                    />
+                  )}
 
                   <div
                     className={`h-full rounded-full transition-all duration-300 ${barColor}`}
