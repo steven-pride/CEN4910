@@ -1,7 +1,7 @@
-
 "use client";
 
 import React, { useMemo, useState } from "react";
+import Link from "next/link";
 
 import {
   BuildingOfficeIcon,
@@ -303,14 +303,12 @@ export function ManagedPropertiesTable({
                   {/* ACTIONS */}
                   <td className="px-4 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        disabled
-                        title="Property details integration pending"
-                        className="rounded-md bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-500"
+                      <Link
+                        href={`/property/${property.propertyId}`}
+                        className="rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       >
                         View Dashboard
-                      </button>
+                      </Link>
 
                       <button
                         type="button"
