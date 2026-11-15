@@ -1,10 +1,17 @@
-import { BuildingOffice2Icon } from "@heroicons/react/24/outline";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+'use client';
+
+import { useActionState } from 'react';
+import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { login } from "@/lib/authActions";
+import { login, type LoginState } from '@/lib/authActions';
+
+const initialState: LoginState = {};
 
 export default function LoginPage() {
+  const [state, formAction, pending] = useActionState(login, initialState);
+
   return (
     <main className="flex flex-1 items-center justify-center bg-muted/50 px-4 py-12 sm:px-6">
       <section className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
@@ -23,7 +30,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form className="space-y-5">
+        <form action={formAction} className="space-y-5">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
               Email address
@@ -54,8 +61,14 @@ export default function LoginPage() {
             />
           </div>
 
-          <Button type="submit" variant="default" size="lg" className="w-full" formAction={login}>
-            Sign in
+          {state?.error && (
+            <p role="alert" className="text-sm text-red-600">
+              {state.error}
+            </p>
+          )}
+
+          <Button type="submit" variant="default" size="lg" className="w-full" disabled={pending}>
+            {pending ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
 

@@ -16,5 +16,14 @@ export const config = {
      * Feel free to modify this pattern to include more paths.
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/admin/:path*",
+    "/auth/:path*",
+    "/calcs/:path*",
+    "/property/:path*",
+    "/meter/:path*",
+    "/reading/:path*",
+    "/login",
+    "/register",
+    "/sample-crud",
   ],
 }
