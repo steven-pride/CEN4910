@@ -9,6 +9,7 @@ import {
   CloudArrowDownIcon,
 } from "@heroicons/react/24/outline";
 import CsvImportModal from "@/components/csv/CsvImportModal";
+import { triggerAsyncExport } from "@/lib/utils/download";
 
 export interface PortfolioHeaderProps {
   totalProperties?: number;
@@ -25,12 +26,35 @@ export function PortfolioHeader({
 }: PortfolioHeaderProps) {
   const router = useRouter();
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState<number | null>(null);
 
   const handleBulkImportClick = () => {
     if (onBulkImport) {
       onBulkImport();
     } else {
       setIsImportOpen(true);
+    }
+  };
+
+  const handleExportClick = async () => {
+    if (onExport) {
+      onExport();
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      setExportProgress(0);
+      await triggerAsyncExport("/api/export/properties", {}, (prog) => {
+        setExportProgress(prog);
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Export failed";
+      alert(`Export failed: ${msg}`);
+    } finally {
+      setIsExporting(false);
+      setExportProgress(null);
     }
   };
 
@@ -82,11 +106,21 @@ export function PortfolioHeader({
 
             <button
               type="button"
-              onClick={onExport}
-              className="flex items-center gap-2 rounded-md bg-cyan-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-cyan-800"
+              onClick={handleExportClick}
+              disabled={isExporting}
+              className="flex items-center gap-2 rounded-md bg-cyan-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-cyan-800 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <CloudArrowDownIcon className="h-4 w-4" />
-              Export Dashboard Data
+              {isExporting ? (
+                <>
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Exporting... {exportProgress ? `${exportProgress}%` : ""}</span>
+                </>
+              ) : (
+                <>
+                  <CloudArrowDownIcon className="h-4 w-4" />
+                  <span>Export Dashboard Data</span>
+                </>
+              )}
             </button>
           </div>
         </div>
