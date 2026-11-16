@@ -130,7 +130,7 @@ export function PortfolioHeader({
               ) : (
                 <>
                   <CloudArrowDownIcon className="h-4 w-4" />
-                  <span>Export Dashboard Data</span>
+                  <span>Export Dashboard</span>
                 </>
               )}
             </button>
