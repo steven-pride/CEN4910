@@ -143,7 +143,7 @@ export function ManagedPropertiesTable({
                 setPage(1);
               }}
               placeholder="Search properties..."
-              className="w-full min-w-50s rounded-md bg-slate-100 py-2.5 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full min-w-50 rounded-md bg-slate-100 py-2.5 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
