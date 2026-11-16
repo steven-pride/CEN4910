@@ -231,7 +231,7 @@ export default function LivePortfolioDashboard() {
   return (
     <div className="min-h-screen bg-[#f3f6fb] text-slate-900">
       <div className="flex min-h-screen">
-        <div className="min-w-0 flex w-full lg:ml-[225px]">
+        <div className="min-w-0 flex w-full lg:ml-56.25">
           <main className="w-full px-4 py-5 md:px-6 lg:px-7">
             {loading ? (
               <p role="status" className="rounded-xl bg-white p-6 text-slate-600 shadow-sm">Loading portfolio data…</p>
