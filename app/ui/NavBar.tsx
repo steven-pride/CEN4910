@@ -77,6 +77,24 @@ export default function NavBar() {
     return null;
   }
 
+  const segments = pathname.split("/").filter(Boolean);
+  const isPropertyRoute = segments[0] === "property";
+
+  // When on a specific property (e.g. /property/123 or /property/123/manage-edit)
+  const propertyId =
+    isPropertyRoute &&
+    segments[1] &&
+    !["manage", "new", "edit"].includes(segments[1])
+      ? segments[1]
+      : null;
+
+  const propertyDetailHref = propertyId ? `/property/${propertyId}` : null;
+
+  // Editing a property: /property/[id]/manage-edit or /property/edit
+  const isEditingProperty =
+    (isPropertyRoute && segments[2] === "manage-edit") ||
+    pathname === "/property/edit";
+
   return (
     <header className="bg-blue-600 text-white">
       <div className="flex items-center justify-between px-6 py-2">
@@ -98,26 +116,37 @@ export default function NavBar() {
               Dashboard
             </Link>
             <Link
-              href="/property/empire-state-building"
+              href="/property/manage"
+              className={clsx(
+                "px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700",
+                { "bg-blue-800": pathname === "/property/manage" }
+              )}
+            >
+              Property List
+            </Link>
+            {propertyDetailHref && (
+              <Link
+                href={propertyDetailHref}
+                className={clsx(
+                  "px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700",
+                  { "bg-blue-800": pathname === propertyDetailHref }
+                )}
+              >
+                Property Detail
+              </Link>
+            )}
+            <Link
+              href={isEditingProperty ? pathname : "/property/new"}
               className={clsx(
                 "px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700",
                 {
-                  "bg-blue-800":
-                    pathname.startsWith("/property/") &&
-                    pathname !== "/property/edit",
+                  "bg-blue-800": isEditingProperty
+                    ? true
+                    : pathname === "/property/new",
                 }
               )}
             >
-              Property Detail
-            </Link>
-            <Link
-              href="/property/edit"
-              className={clsx(
-                "px-3 py-1.5 rounded text-sm font-medium text-center leading-tight hover:bg-blue-700",
-                { "bg-blue-800": pathname === "/property/edit" }
-              )}
-            >
-              Add/Edit Property
+              {isEditingProperty ? "Edit Property" : "Add Property"}
             </Link>
             {isAdmin && (
               <Link
