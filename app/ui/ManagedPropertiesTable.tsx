@@ -143,7 +143,7 @@ export function ManagedPropertiesTable({
                 setPage(1);
               }}
               placeholder="Search properties..."
-              className="w-full min-w-[200px] rounded-md bg-slate-100 py-2.5 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full min-w-50s rounded-md bg-slate-100 py-2.5 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -186,7 +186,7 @@ export function ManagedPropertiesTable({
 
       {/* TABLE */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1000px]">
+        <table className="w-full min-w-250">
 
           <thead className="bg-slate-100 text-left">
             <tr className="text-[11px] font-bold uppercase tracking-wide text-slate-600">
@@ -301,23 +301,21 @@ export function ManagedPropertiesTable({
                   </td>
 
                   {/* ACTIONS */}
-                  <td className="px-4 py-4 text-right">
+                  <td className="px-4 py-4">
                     <div className="flex justify-end gap-2">
                       <Link
                         href={`/property/${property.propertyId}`}
-                        className="rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white text-center transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       >
                         View Dashboard
                       </Link>
 
-                      <button
-                        type="button"
-                        disabled
-                        title="Property editing integration pending"
-                        className="rounded-md bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-400"
+                      <Link
+                        href={`/property/${property.propertyId}/manage-edit`}
+                        className="rounded-md bg-slate-100 px-6 pt-3.5 text-xs font-semibold text-slate-400"
                       >
                         Edit
-                      </button>
+                      </Link>
                     </div>
                   </td>
                 </tr>
