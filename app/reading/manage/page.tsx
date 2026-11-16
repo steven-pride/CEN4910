@@ -131,7 +131,7 @@ export default function ReadingManagementPage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full min-w-[1000px]">
+          <table className="w-full min-w-250">
             <thead className="bg-slate-100 text-left">
               <tr className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                 <th className="px-4 py-3">Reading ID</th>
