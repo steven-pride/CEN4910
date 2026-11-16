@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, SubmitEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function NewMeterPage() {
+function NewMeterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultPropertyId = searchParams.get("propertyId") ?? "";
 
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -26,7 +28,7 @@ export default function NewMeterPage() {
   }
 
   async function handleSubmit(
-    event: FormEvent<HTMLFormElement>
+    event: SubmitEvent<HTMLFormElement>
   ) {
     event.preventDefault();
 
@@ -152,6 +154,7 @@ export default function NewMeterPage() {
               type="number"
               min="1"
               required
+              defaultValue={defaultPropertyId}
               className={inputClass}
             />
 
@@ -259,5 +262,13 @@ export default function NewMeterPage() {
         </div>
       </form>
     </main>
+  );
+}
+
+export default function NewMeterPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewMeterForm />
+    </Suspense>
   );
 }

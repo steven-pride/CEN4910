@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+function mapPropertyUse(row: any) {
+  const type = Array.isArray(row.property_type)
+    ? row.property_type[0]
+    : row.property_type;
+
+  return {
+    propertyUseId: row.property_use_id,
+    propertyTypeId: row.property_type_id,
+    propertyTypeName: type?.property_type_name ?? null,
+    energyStarEligible: type?.energy_star_eligible ?? null,
+    grossFloorArea: row.gross_floor_area,
+    weeklyOperatingHours: row.weekly_operating_hours,
+    workersOnMainShift: row.workers_on_main_shift,
+    numberOfComputers: row.number_of_computers,
+    percentHeated: row.percent_heated,
+    percentCooled: row.percent_cooled,
+  };
+}
+
 // GET - Read one property
 export async function GET(
   _request: NextRequest,
@@ -35,7 +54,21 @@ export async function GET(
         irrigated_area,
         year_built,
         occupancy_percent,
-        number_of_buildings
+        number_of_buildings,
+        property_use (
+          property_use_id,
+          property_type_id,
+          gross_floor_area,
+          weekly_operating_hours,
+          workers_on_main_shift,
+          number_of_computers,
+          percent_heated,
+          percent_cooled,
+          property_type (
+            property_type_name,
+            energy_star_eligible
+          )
+        )
       `)
       .eq("property_id", propertyId)
       .maybeSingle();
@@ -72,6 +105,7 @@ export async function GET(
       yearBuilt: data.year_built,
       occupancyPercent: data.occupancy_percent,
       numberOfBuildings: data.number_of_buildings,
+      propertyUses: (data.property_use ?? []).map(mapPropertyUse),
     };
 
     return NextResponse.json(
