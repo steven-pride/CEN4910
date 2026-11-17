@@ -10,12 +10,21 @@ export default function CalcsPage() {
   const [pue, setPue] = useState<number>(0);
   const [gas, setGas] = useState<number>(0);
   const [eli, setEli] = useState("");
+  const [LLM, setLLM] = useState<Number>(0);
   const [userInput1, setUserInput1] = useState("");
   const [userInput2, setUserInput2] = useState("");
   const [userInput3, setUserInput3] = useState("");
   const [userInput4, setUserInput4] = useState("");
   const [userInput5, setUserInput5] = useState("");
   const [userInput6, setUserInput6] = useState("");
+  const [userInput7, setUserInput7] = useState("");
+  const [userInput8, setUserInput8] = useState("");
+  const [userInput9, setUserInput9] = useState("");
+  const [userInput10, setUserInput10] = useState("");
+  const [userInput11, setUserInput11] = useState("");
+  const [userInput12, setUserInput12] = useState("");
+  const [userInput13, setUserInput13] = useState("");
+  const [userInput14, setUserInput14] = useState("");
   
   const handleClickEUI = async () => {
     
@@ -89,8 +98,70 @@ export default function CalcsPage() {
     
   };
 
+  const handleClickLLM = async () => {
+
+    const sqftParsed = Number(userInput7);
+    const hoursParsed = Number(userInput8);
+    const workersParsed = Number(userInput9);
+    const computersParsed = Number(userInput10);
+    const cooledParsed = Number(userInput11);
+    const heatedParsed = Number(userInput12);
+    const cdd65Parsed = Number(userInput13);
+    const hdd65Parsed = Number(userInput14);
+
+    const nums = [sqftParsed, hoursParsed, workersParsed, computersParsed, cooledParsed, heatedParsed, cdd65Parsed, hdd65Parsed];
+    const allNumbers = nums.every((item) => typeof item === 'number' && !Number.isNaN(item));
+
+    if (allNumbers) {
+
+      const payload = {
+        property: {
+          sqft: sqftParsed,
+          weekly_hours: hoursParsed,
+          workers: workersParsed,
+          computers: computersParsed,
+          percent_cooled: cooledParsed,
+          percent_heated: heatedParsed,
+          cdd65: cdd65Parsed,
+          hdd65: hdd65Parsed
+        }
+      };
+
+      try {
+      const res = await fetch('/api/math/predeui', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        const value = data.value;
+        setLLM(value);
+      }
+      else {
+        setLLM(-1);
+      }
+    }
+
+    catch (error) {
+      setLLM(-1);
+    }
+    }
+    else {
+      setLLM(-1);
+    }
+    
+  };
+
   return (
     <main className="flex flex-1 items-center justify-center bg-muted/50 px-4 py-12 sm:px-6">
+
+      {/* Calculated EUI Card*/}
+      
       <section className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
         <div className="mb-8 flex flex-col items-center text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-card-foreground">
@@ -132,6 +203,7 @@ export default function CalcsPage() {
         </form>
       </section>
 
+      {/* Calculated PUE Card*/}
 
       <section className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
         <div className="mb-8 flex flex-col items-center text-center">
@@ -175,6 +247,7 @@ export default function CalcsPage() {
         </form>
       </section>
 
+      {/* Calculated Gas Card*/}
 
       <section className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
         <div className="mb-8 flex flex-col items-center text-center">
@@ -205,6 +278,7 @@ export default function CalcsPage() {
         </form>
       </section>
 
+      {/* Eligible Card*/}
 
       <section className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
         <div className="mb-8 flex flex-col items-center text-center">
@@ -230,6 +304,142 @@ export default function CalcsPage() {
           </div>
 
           <Button type="button" variant="default" size="lg" className="w-full" onClick={handleClickEli}>
+            Calculate
+          </Button>
+        </form>
+      </section>
+
+      {/* Predicted Source EUI Card*/}
+
+      <section className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-card-foreground">
+            Predicted Source EUI: {LLM.toFixed(2)}
+          </h1>
+        </div>
+        <form className="space-y-5" onSubmit={(e) => {e.preventDefault();}}>
+          <div className="space-y-2">
+            <label htmlFor="llmsqft" className="text-sm font-medium">
+              Enter Square Feet:
+            </label>
+            <Input
+              id="llmsqft"
+              name="llmsqft"
+              type="text"
+              autoComplete="off"
+              value={userInput7}
+              onChange={(e) => setUserInput7(e.target.value)}
+              required
+              className="h-11 rounded-lg bg-background"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="llmhours" className="text-sm font-medium">
+              Enter Weekly Hours:
+            </label>
+            <Input
+              id="llmhours"
+              name="llmhours"
+              type="text"
+              autoComplete="off"
+              value={userInput8}
+              onChange={(e) => setUserInput8(e.target.value)}
+              required
+              className="h-11 rounded-lg bg-background"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="llmworkers" className="text-sm font-medium">
+              Enter Amount of Workers:
+            </label>
+            <Input
+              id="llmworkers"
+              name="llmworkers"
+              type="text"
+              autoComplete="off"
+              value={userInput9}
+              onChange={(e) => setUserInput9(e.target.value)}
+              required
+              className="h-11 rounded-lg bg-background"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="llmcomputers" className="text-sm font-medium">
+              Enter Number of Computers:
+            </label>
+            <Input
+              id="llmcomputers"
+              name="llmcomputers"
+              type="text"
+              autoComplete="off"
+              value={userInput10}
+              onChange={(e) => setUserInput10(e.target.value)}
+              required
+              className="h-11 rounded-lg bg-background"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="llmcooled" className="text-sm font-medium">
+              Enter Percent Cooled:
+            </label>
+            <Input
+              id="llmcooled"
+              name="llmcooled"
+              type="text"
+              autoComplete="off"
+              value={userInput11}
+              onChange={(e) => setUserInput11(e.target.value)}
+              required
+              className="h-11 rounded-lg bg-background"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="llmheated" className="text-sm font-medium">
+              Enter Percent Heated:
+            </label>
+            <Input
+              id="llmheated"
+              name="llmheated"
+              type="text"
+              autoComplete="off"
+              value={userInput12}
+              onChange={(e) => setUserInput12(e.target.value)}
+              required
+              className="h-11 rounded-lg bg-background"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="llmcdd65" className="text-sm font-medium">
+              Enter Cooling Degree Days (Base 65F):
+            </label>
+            <Input
+              id="llmcdd65"
+              name="llmcdd65"
+              type="text"
+              autoComplete="off"
+              value={userInput13}
+              onChange={(e) => setUserInput13(e.target.value)}
+              required
+              className="h-11 rounded-lg bg-background"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="llmhdd65" className="text-sm font-medium">
+              Enter Heating Degree Days (Base 65F):
+            </label>
+            <Input
+              id="llmhdd65"
+              name="llmhdd65"
+              type="text"
+              autoComplete="off"
+              value={userInput14}
+              onChange={(e) => setUserInput14(e.target.value)}
+              required
+              className="h-11 rounded-lg bg-background"
+            />
+          </div>
+
+          <Button type="button" variant="default" size="lg" className="w-full" onClick={handleClickLLM}>
             Calculate
           </Button>
         </form>
