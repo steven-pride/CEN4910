@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import {
+  authorizationFailureResponse,
+  getRequestAuthorization,
+} from "@/lib/auth";
+import { canViewProperty } from "@/lib/property-permissions";
 import { createExportJob } from "@/lib/csv/exportJobs";
 import { runPropertyExportAsync } from "@/lib/csv/exporter";
 
@@ -13,51 +17,67 @@ export async function GET(request: NextRequest) {
 
 async function handleExport(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: authData } = await supabase.auth.getUser();
-    const user = authData?.user;
+    const { authorization, failure } = await getRequestAuthorization();
 
-    let role = "admin";
-    let assignedPropertyIds: number[] = [];
+    if (failure) return authorizationFailureResponse(failure);
 
-    if (user) {
-      const { data: profile } = await supabase
-        .from("user_profile")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (profile?.role) {
-        role = profile.role.toLowerCase();
-      }
-
-      const { data: assignments } = await supabase
-        .from("property_assignment")
-        .select("property_id")
-        .eq("user_id", user.id);
-
-      if (assignments) {
-        assignedPropertyIds = assignments.map((a) => a.property_id);
-      }
-    }
-
-    let bodyParams: Record<string, any> = {};
+    let propertyIdValue: unknown = request.nextUrl.searchParams.get("propertyId");
     if (request.method === "POST") {
-      bodyParams = await request.json();
+      const body: unknown = await request.json();
+      if (typeof body === "object" && body !== null && !Array.isArray(body)) {
+        propertyIdValue = "propertyId" in body ? body.propertyId : null;
+      }
     }
 
-    const propertyId = bodyParams.propertyId || request.nextUrl.searchParams.get("propertyId") || undefined;
-    const params = propertyId ? { propertyId } : {};
+    const propertyId =
+      propertyIdValue === null || propertyIdValue === undefined || propertyIdValue === ""
+        ? undefined
+        : Number(propertyIdValue);
+
+    if (propertyId !== undefined && !Number.isSafeInteger(propertyId)) {
+      return NextResponse.json(
+        { error: "Invalid property ID.", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
+    }
+
+    if (
+      propertyId !== undefined &&
+      !canViewProperty(
+        authorization.role,
+        authorization.assignedPropertyIds,
+        propertyId
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Property not found.", code: "NOT_FOUND" },
+        { status: 404 }
+      );
+    }
+
+    if (
+      authorization.role !== "admin" &&
+      authorization.assignedPropertyIds.length === 0
+    ) {
+      return authorizationFailureResponse("forbidden");
+    }
+
+    const params = propertyId === undefined ? {} : { propertyId };
 
     const exportId = `exp-${crypto.randomUUID()}`;
 
     // Create job record
-    createExportJob(exportId, "properties", user?.id, assignedPropertyIds);
+    createExportJob(
+      exportId,
+      "properties",
+      authorization.userId,
+      authorization.assignedPropertyIds
+    );
 
     const context = {
-      userId: user?.id,
-      role,
-      assignedPropertyIds,
+      userId: authorization.userId,
+      role: authorization.role,
+      assignedPropertyIds: authorization.assignedPropertyIds,
     };
 
     // Dispatch background worker asynchronously

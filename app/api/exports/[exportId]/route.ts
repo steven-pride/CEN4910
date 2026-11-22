@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStagedFile } from "@/lib/storage/storage";
 import { getExportJob } from "@/lib/csv/exportJobs";
-import { createClient } from "@/lib/supabase/server";
+import {
+  authorizationFailureResponse,
+  getRequestAuthorization,
+} from "@/lib/auth";
 
 export async function GET(
   request: NextRequest,
@@ -16,27 +19,20 @@ export async function GET(
       );
     }
 
-    // Authenticate user session if present
-    const supabase = await createClient();
-    const { data: authData } = await supabase.auth.getUser();
-    const user = authData?.user;
+    const { authorization, failure } = await getRequestAuthorization();
+
+    if (failure) return authorizationFailureResponse(failure);
 
     const job = getExportJob(exportId);
-    if (job && job.userId && user && job.userId !== user.id) {
-      // If user is neither owner nor admin, forbid
-      const { data: profile } = await supabase
-        .from("user_profile")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
+    if (!job || !job.userId) {
+      return NextResponse.json(
+        { error: "Export job not found", code: "NOT_FOUND" },
+        { status: 404 }
+      );
+    }
 
-      const role = profile?.role?.toLowerCase() || "";
-      if (role !== "admin") {
-        return NextResponse.json(
-          { error: "Forbidden: You do not have permission to access this export", code: "FORBIDDEN" },
-          { status: 403 }
-        );
-      }
+    if (job.userId !== authorization.userId && authorization.role !== "admin") {
+      return authorizationFailureResponse("forbidden");
     }
 
     // Retrieve staged file content

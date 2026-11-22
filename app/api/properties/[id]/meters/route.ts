@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import {
+  authorizationFailureResponse,
+  getRequestAuthorization,
+} from "@/lib/auth";
+import { canViewProperty } from "@/lib/property-permissions";
 
 const PAGE_SIZE = 10;
 
@@ -24,7 +28,22 @@ export async function GET(
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const supabase = await createClient();
+    const { supabase, authorization, failure } = await getRequestAuthorization();
+
+    if (failure) return authorizationFailureResponse(failure);
+
+    if (
+      !canViewProperty(
+        authorization.role,
+        authorization.assignedPropertyIds,
+        propertyId
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Property not found.", code: "NOT_FOUND" },
+        { status: 404 }
+      );
+    }
 
     let query = supabase
       .from("meter")
