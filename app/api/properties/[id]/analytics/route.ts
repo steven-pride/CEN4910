@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import {
+  authorizationFailureResponse,
+  getRequestAuthorization,
+} from "@/lib/auth";
+import { canViewProperty } from "@/lib/property-permissions";
 
 // Only meters whose meter_type matches are counted as "energy".
 // Adjust to match the values you actually store in meter.meter_type.
@@ -41,7 +45,22 @@ export async function GET(
       request.nextUrl.searchParams.get("range") ?? "12m"
     );
 
-    const supabase = await createClient();
+    const { supabase, authorization, failure } = await getRequestAuthorization();
+
+    if (failure) return authorizationFailureResponse(failure);
+
+    if (
+      !canViewProperty(
+        authorization.role,
+        authorization.assignedPropertyIds,
+        propertyId
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Property not found.", code: "NOT_FOUND" },
+        { status: 404 }
+      );
+    }
 
     // Build the list of month buckets, oldest first.
     const now = new Date();

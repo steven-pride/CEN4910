@@ -51,7 +51,11 @@ export async function runDashboardExportAsync(
       number_of_buildings
     `);
 
-    if (context.role !== "admin" && context.assignedPropertyIds && context.assignedPropertyIds.length > 0) {
+    if (context.role !== "admin" && !context.assignedPropertyIds?.length) {
+      throw new Error("No assigned properties available to export.");
+    }
+
+    if (context.role !== "admin") {
       query = query.in("property_id", context.assignedPropertyIds);
     }
 
@@ -112,6 +116,14 @@ export async function runPropertyFullExportAsync(
   try {
     updateExportJob(exportId, { status: "processing", progress: 20 });
     const supabase = createAdminClient();
+    const targetPropertyId = Number(propertyId);
+
+    if (
+      context.role !== "admin" &&
+      !context.assignedPropertyIds?.includes(targetPropertyId)
+    ) {
+      throw new Error("You do not have permission to export this property.");
+    }
 
     // Load units directly from unit table
     const { data: unitsData, error: unitsError } = await supabase
@@ -132,7 +144,6 @@ export async function runPropertyFullExportAsync(
     }
 
     // 1. Get target property directly by ID
-    const targetPropertyId = Number(propertyId);
     const { data: property, error: propertyError } = await supabase
       .from("property")
       .select("*")

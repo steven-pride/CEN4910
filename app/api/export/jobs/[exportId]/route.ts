@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  authorizationFailureResponse,
+  getRequestAuthorization,
+} from "@/lib/auth";
 import { getExportJob } from "@/lib/csv/exportJobs";
 
 export async function GET(
@@ -7,13 +11,21 @@ export async function GET(
 ) {
   try {
     const { exportId } = await params;
+    const { authorization, failure } = await getRequestAuthorization();
+
+    if (failure) return authorizationFailureResponse(failure);
+
     const job = getExportJob(exportId);
 
-    if (!job) {
+    if (!job || !job.userId) {
       return NextResponse.json(
         { error: "Export job not found", code: "NOT_FOUND" },
         { status: 404 }
       );
+    }
+
+    if (job.userId !== authorization.userId && authorization.role !== "admin") {
+      return authorizationFailureResponse("forbidden");
     }
 
     if (job.status === "completed") {

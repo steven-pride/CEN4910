@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import {
+  authorizationFailureResponse,
+  getRequestAuthorization,
+} from "@/lib/auth";
+import { canEditProperty, canViewProperty } from "@/lib/property-permissions";
 
 function mapPropertyUse(row: any) {
   const type = Array.isArray(row.property_type)
@@ -27,7 +31,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
+    const { supabase, authorization, failure } = await getRequestAuthorization();
+
+    if (failure) return authorizationFailureResponse(failure);
 
     const propertyId = Number(id);
 
@@ -38,6 +44,19 @@ export async function GET(
           code: "VALIDATION_ERROR",
         },
         { status: 400 }
+      );
+    }
+
+    if (
+      !canViewProperty(
+        authorization.role,
+        authorization.assignedPropertyIds,
+        propertyId
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Property not found.", code: "NOT_FOUND" },
+        { status: 404 }
       );
     }
 
@@ -133,7 +152,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
+    const { supabase, authorization, failure } = await getRequestAuthorization();
+
+    if (failure) return authorizationFailureResponse(failure);
 
     const propertyId = Number(id);
 
@@ -145,6 +166,29 @@ export async function PATCH(
         },
         { status: 400 }
       );
+    }
+
+    if (
+      !canViewProperty(
+        authorization.role,
+        authorization.assignedPropertyIds,
+        propertyId
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Property not found.", code: "NOT_FOUND" },
+        { status: 404 }
+      );
+    }
+
+    if (
+      !canEditProperty(
+        authorization.role,
+        authorization.assignedPropertyIds,
+        propertyId
+      )
+    ) {
+      return authorizationFailureResponse("forbidden");
     }
 
     const body = await request.json();
@@ -287,7 +331,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
+    const { supabase, authorization, failure } = await getRequestAuthorization();
+
+    if (failure) return authorizationFailureResponse(failure);
 
     const propertyId = Number(id);
 
@@ -299,6 +345,29 @@ export async function DELETE(
         },
         { status: 400 }
       );
+    }
+
+    if (
+      !canViewProperty(
+        authorization.role,
+        authorization.assignedPropertyIds,
+        propertyId
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Property not found.", code: "NOT_FOUND" },
+        { status: 404 }
+      );
+    }
+
+    if (
+      !canEditProperty(
+        authorization.role,
+        authorization.assignedPropertyIds,
+        propertyId
+      )
+    ) {
+      return authorizationFailureResponse("forbidden");
     }
 
     const { data, error } = await supabase

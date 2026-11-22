@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { authorizationFailureResponse, getRequestAuthorization } from "@/lib/auth";
 
 // GET - Read properties with filtering and pagination
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const { supabase, authorization, failure } = await getRequestAuthorization();
+
+    if (failure) return authorizationFailureResponse(failure);
 
     const { searchParams } = new URL(request.url);
 
@@ -24,6 +26,19 @@ export async function GET(request: NextRequest) {
       1,
       parseInt(searchParams.get("pageSize") || "10", 10)
     );
+
+    if (
+      authorization.role !== "admin" &&
+      authorization.assignedPropertyIds.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          data: [],
+          pagination: { page, pageSize, totalCount: 0, totalPages: 1 },
+        },
+        { status: 200 }
+      );
+    }
 
     // Build property query
     let query = supabase
@@ -67,6 +82,10 @@ export async function GET(request: NextRequest) {
         "state_province",
         `%${stateProvince}%`
       );
+    }
+
+    if (authorization.role !== "admin") {
+      query = query.in("property_id", authorization.assignedPropertyIds);
     }
 
     // Calculate pagination range
@@ -136,7 +155,13 @@ export async function GET(request: NextRequest) {
 // POST - Create a new property
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const { supabase, authorization, failure } = await getRequestAuthorization();
+
+    if (failure) return authorizationFailureResponse(failure);
+    if (authorization.role !== "admin") {
+      return authorizationFailureResponse("forbidden");
+    }
+
     const body = await request.json();
 
     const {
