@@ -3,6 +3,8 @@
  * Basic, junior-level validation checks.
  */
 
+import type { MeterLookup, MeterRecord } from "./importer-utils";
+
 export interface RowValidationError {
   row: number;
   column: string;
@@ -23,6 +25,7 @@ export interface ValidatedProperty {
 }
 
 export interface ValidatedMeter {
+  meter_id?: number;
   property_id: number;
   meter_name: string;
   meter_type: string | null;
@@ -40,10 +43,42 @@ export interface ValidatedReading {
   cost: number | null;
 }
 
-function isValidDate(dateStr: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
-  const d = new Date(dateStr);
-  return !isNaN(d.getTime());
+function parseDate(dateStr: string): string | null {
+  let year: number;
+  let month: number;
+  let day: number;
+
+  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (isoMatch) {
+    year = Number(isoMatch[1]);
+    month = Number(isoMatch[2]);
+    day = Number(isoMatch[3]);
+  } else {
+    const slashMatch = /^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/.exec(dateStr);
+    if (!slashMatch) return null;
+
+    month = Number(slashMatch[1]);
+    day = Number(slashMatch[2]);
+    year = Number(slashMatch[3]);
+    if (slashMatch[3].length === 2) {
+      year += year <= 29 ? 2000 : 1900;
+    }
+  }
+
+  if (year < 1 || month < 1 || month > 12) return null;
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (day < 1 || day > daysInMonth[month - 1]) return null;
+
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function findUnitId(unitMap: Record<string, number>, unitName: string): number | undefined {
+  const normalized = unitName.toLowerCase().trim();
+  if (!Object.hasOwn(unitMap, normalized)) return undefined;
+
+  const unitId = unitMap[normalized];
+  return typeof unitId === "number" ? unitId : undefined;
 }
 
 /**
@@ -161,14 +196,26 @@ export function validateMeterRow(
 
   const meter_type = (raw.meter_type || "").trim() || null;
 
+  let meter_id: number | undefined;
+  const meterIdStr = (raw.meter_id || "").trim();
+  if (meterIdStr) {
+    const parsedMeterId = Number(meterIdStr);
+    if (!Number.isSafeInteger(parsedMeterId) || parsedMeterId <= 0) {
+      errors.push({ row: rowIndex, column: "meter_id", message: "Meter ID must be a positive integer." });
+    } else {
+      meter_id = parsedMeterId;
+    }
+  }
+
   const unitStr = (raw.default_unit || raw.unit || "").trim();
   let default_unit = 0;
   if (!unitStr) {
     errors.push({ row: rowIndex, column: "default_unit", message: "Default unit is required." });
   } else {
     const lower = unitStr.toLowerCase();
-    if (unitMap[lower]) {
-      default_unit = unitMap[lower];
+    const unitId = findUnitId(unitMap, lower);
+    if (unitId !== undefined) {
+      default_unit = unitId;
     } else {
       errors.push({
         row: rowIndex,
@@ -178,17 +225,25 @@ export function validateMeterRow(
     }
   }
 
-  const active_date = (raw.active_date || "").trim();
-  if (!active_date || !isValidDate(active_date)) {
-    errors.push({ row: rowIndex, column: "active_date", message: "Active date must be in YYYY-MM-DD format." });
+  const active_date = parseDate((raw.active_date || "").trim());
+  if (!active_date) {
+    errors.push({
+      row: rowIndex,
+      column: "active_date",
+      message: "Active date must be a valid YYYY-MM-DD or month-first M/D/YYYY or M/D/YY date.",
+    });
   }
 
   let inactive_date: string | null = null;
   if (raw.inactive_date && raw.inactive_date.trim() !== "") {
-    const val = raw.inactive_date.trim();
-    if (!isValidDate(val)) {
-      errors.push({ row: rowIndex, column: "inactive_date", message: "Inactive date must be in YYYY-MM-DD format." });
-    } else if (active_date && isValidDate(active_date) && val < active_date) {
+    const val = parseDate(raw.inactive_date.trim());
+    if (!val) {
+      errors.push({
+        row: rowIndex,
+        column: "inactive_date",
+        message: "Inactive date must be a valid YYYY-MM-DD or month-first M/D/YYYY or M/D/YY date.",
+      });
+    } else if (active_date && val < active_date) {
       errors.push({ row: rowIndex, column: "inactive_date", message: "Inactive date cannot be earlier than active date." });
     } else {
       inactive_date = val;
@@ -199,15 +254,18 @@ export function validateMeterRow(
     return { errors };
   }
 
+  const data: ValidatedMeter = {
+    property_id: property_id as number,
+    meter_name,
+    meter_type,
+    default_unit,
+    active_date: active_date as string,
+    inactive_date,
+  };
+  if (meter_id !== undefined) data.meter_id = meter_id;
+
   return {
-    data: {
-      property_id: property_id as number,
-      meter_name,
-      meter_type,
-      default_unit,
-      active_date,
-      inactive_date,
-    },
+    data,
     errors: [],
   };
 }
@@ -219,18 +277,49 @@ export function validateReadingRow(
   raw: Record<string, string>,
   rowIndex: number,
   unitMap: Record<string, number> = {},
-  meterMap: Record<string, number> = {}
+  meterLookup: MeterLookup = { byId: new Map(), byName: new Map() }
 ): { data?: ValidatedReading; errors: RowValidationError[] } {
   const errors: RowValidationError[] = [];
 
   let meter_id = 0;
+  let resolvedMeter: MeterRecord | undefined;
   const meterNameStr = (raw.meter_name || raw.meter || "").trim();
   const meterIdStr = (raw.meter_id || "").trim();
 
-  if (meterNameStr) {
-    const lower = meterNameStr.toLowerCase();
-    if (meterMap[lower]) {
-      meter_id = meterMap[lower];
+  if (meterIdStr) {
+    const id = Number(meterIdStr);
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      errors.push({ row: rowIndex, column: "meter_id", message: "Meter ID must be a positive integer." });
+    } else {
+      const meter = meterLookup.byId.get(id);
+      if (!meter) {
+        errors.push({
+          row: rowIndex,
+          column: "meter_id",
+          message: `Meter ID ${id} was not found or is outside the authorized property scope.`,
+        });
+      } else if (meterNameStr && meter.meter_name.toLowerCase().trim() !== meterNameStr.toLowerCase()) {
+        errors.push({
+          row: rowIndex,
+          column: "meter_name",
+          message: `Meter name '${meterNameStr}' does not match meter ID ${id}.`,
+        });
+      } else {
+        meter_id = id;
+        resolvedMeter = meter;
+      }
+    }
+  } else if (meterNameStr) {
+    const matchingIds = meterLookup.byName.get(meterNameStr.toLowerCase()) ?? [];
+    if (matchingIds.length === 1) {
+      meter_id = matchingIds[0];
+      resolvedMeter = meterLookup.byId.get(meter_id);
+    } else if (matchingIds.length > 1) {
+      errors.push({
+        row: rowIndex,
+        column: "meter_name",
+        message: `Meter name '${meterNameStr}' matches multiple meters. Provide meter_id to select the correct meter.`,
+      });
     } else {
       errors.push({
         row: rowIndex,
@@ -238,36 +327,33 @@ export function validateReadingRow(
         message: `Meter '${meterNameStr}' not found for this property.`,
       });
     }
-  } else if (meterIdStr) {
-    const id = Number(meterIdStr);
-    if (!isNaN(id) && id > 0) {
-      meter_id = id;
-    } else {
-      errors.push({
-        row: rowIndex,
-        column: "meter_name",
-        message: "Valid meter_name is required.",
-      });
-    }
   } else {
     errors.push({
       row: rowIndex,
       column: "meter_name",
-      message: "meter_name is required.",
+      message: "meter_name or meter_id is required.",
     });
   }
 
-  const start_date = (raw.start_date || "").trim();
-  if (!start_date || !isValidDate(start_date)) {
-    errors.push({ row: rowIndex, column: "start_date", message: "Start date must be in YYYY-MM-DD format." });
+  const start_date = parseDate((raw.start_date || "").trim());
+  if (!start_date) {
+    errors.push({
+      row: rowIndex,
+      column: "start_date",
+      message: "Start date must be a valid YYYY-MM-DD or month-first M/D/YYYY or M/D/YY date.",
+    });
   }
 
   let end_date: string | null = null;
   if (raw.end_date && raw.end_date.trim() !== "") {
-    const val = raw.end_date.trim();
-    if (!isValidDate(val)) {
-      errors.push({ row: rowIndex, column: "end_date", message: "End date must be in YYYY-MM-DD format." });
-    } else if (start_date && isValidDate(start_date) && val < start_date) {
+    const val = parseDate(raw.end_date.trim());
+    if (!val) {
+      errors.push({
+        row: rowIndex,
+        column: "end_date",
+        message: "End date must be a valid YYYY-MM-DD or month-first M/D/YYYY or M/D/YY date.",
+      });
+    } else if (start_date && val < start_date) {
       errors.push({ row: rowIndex, column: "end_date", message: "end_date cannot precede start_date." });
     } else {
       end_date = val;
@@ -280,14 +366,14 @@ export function validateReadingRow(
     errors.push({ row: rowIndex, column: "usage_quantity", message: "Expected non-negative number for usage_quantity." });
   }
 
-  const unitStr = (raw.unit || raw.default_unit || "").trim();
+  const unitStr = (raw.unit || "").trim();
   let unit = 0;
-  if (!unitStr) {
-    errors.push({ row: rowIndex, column: "unit", message: "Unit is required." });
-  } else {
+  const meterDefaultUnit = resolvedMeter?.default_unit;
+  if (unitStr) {
     const lower = unitStr.toLowerCase();
-    if (unitMap[lower]) {
-      unit = unitMap[lower];
+    const unitId = findUnitId(unitMap, lower);
+    if (unitId !== undefined) {
+      unit = unitId;
     } else {
       errors.push({
         row: rowIndex,
@@ -295,6 +381,16 @@ export function validateReadingRow(
         message: `Unit '${unitStr}' not found in unit table.`,
       });
     }
+  } else if (typeof meterDefaultUnit === "number" && Number.isSafeInteger(meterDefaultUnit) && meterDefaultUnit > 0) {
+    unit = meterDefaultUnit;
+  } else {
+    errors.push({
+      row: rowIndex,
+      column: "unit",
+      message: resolvedMeter
+        ? "Meter default unit is unavailable; provide a unit."
+        : "Meter could not be resolved, so its default unit cannot be used.",
+    });
   }
 
   let cost: number | null = null;
@@ -314,7 +410,7 @@ export function validateReadingRow(
   return {
     data: {
       meter_id,
-      start_date,
+      start_date: start_date as string,
       end_date,
       usage_quantity,
       unit,

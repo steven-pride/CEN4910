@@ -28,6 +28,7 @@ interface JobStatusResponse {
   totalRows: number;
   importedCount: number;
   failedCount: number;
+  errorCount: number;
   errors?: { row: number; column: string; message: string }[];
   errorReportUrl?: string;
 }
@@ -280,16 +281,24 @@ export function CsvImportModal({
                   <div>
                     <h4 className="text-sm font-bold text-slate-900">
                       {jobStatus.status === "completed"
-                        ? "Import Completed"
+                        ? jobStatus.failedCount > 0
+                          ? "Import Completed with Errors"
+                          : "Import Completed"
                         : jobStatus.status === "failed"
                         ? "Import Failed or Had Errors"
                         : "Processing Import In Background..."}
                     </h4>
                     <p className="text-xs text-slate-500">
                       {jobStatus.status === "completed"
-                        ? `Successfully ingested ${jobStatus.importedCount} of ${jobStatus.totalRows} records.`
+                        ? jobStatus.failedCount > 0
+                          ? `Imported ${jobStatus.importedCount} of ${jobStatus.totalRows} rows; ${jobStatus.failedCount} rows failed.`
+                          : `Successfully ingested ${jobStatus.importedCount} of ${jobStatus.totalRows} records.`
                         : jobStatus.status === "failed"
-                        ? `Processed ${jobStatus.processedRows} records with ${jobStatus.failedCount} errors.`
+                        ? jobStatus.processedRows === 0 && jobStatus.errors?.some((error) => error.row === 0)
+                          ? jobStatus.totalRows > 0
+                            ? `The import stopped before processing any rows; ${jobStatus.failedCount} rows were not imported.`
+                            : "The import file contained no rows to process."
+                          : `Processed ${jobStatus.processedRows} rows; ${jobStatus.failedCount} rows failed.`
                         : `Processed ${jobStatus.processedRows} of ${jobStatus.totalRows || "?"} rows...`}
                     </p>
                   </div>
@@ -316,9 +325,9 @@ export function CsvImportModal({
               {/* Error Report Download if errors exist */}
               {jobStatus.errorReportUrl && (
                 <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800">
-                  <div>
-                    <span className="font-bold">Errors occurred during ingestion.</span>
-                    <p>{jobStatus.failedCount} rows failed schema or reference checks.</p>
+                    <div>
+                      <span className="font-bold">Errors occurred during ingestion.</span>
+                      <p>{jobStatus.failedCount} rows failed validation or database checks.</p>
                   </div>
                   <a
                     href={jobStatus.errorReportUrl}
@@ -328,6 +337,36 @@ export function CsvImportModal({
                     <DocumentArrowDownIcon className="h-4 w-4" />
                     Download Error Report
                   </a>
+                </div>
+              )}
+
+              {(jobStatus.errorCount > 0 || (jobStatus.errors?.length ?? 0) > 0) && (
+                <div className="space-y-2 rounded-lg border border-red-200 bg-white p-3 text-xs text-red-900">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h5 className="font-bold">Import error details</h5>
+                    <span>
+                      {jobStatus.errorCount} error details across {jobStatus.failedCount} failed rows
+                    </span>
+                  </div>
+                  {jobStatus.errors && jobStatus.errors.length > 0 ? (
+                    <ul className="max-h-40 space-y-1 overflow-auto">
+                      {jobStatus.errors.map((error, index) => (
+                        <li key={`${error.row}-${error.column}-${index}`}>
+                          <span className="font-semibold">
+                            {error.row > 0 ? `Row ${error.row}` : "Import"}, {error.column}:
+                          </span>{" "}
+                          {error.message}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p>No error details were returned.</p>
+                  )}
+                  {jobStatus.errorCount > (jobStatus.errors?.length ?? 0) && (
+                    <p className="text-red-700">
+                      Showing {jobStatus.errors?.length ?? 0} of {jobStatus.errorCount} error details; the remaining details were omitted.
+                    </p>
+                  )}
                 </div>
               )}
             </div>

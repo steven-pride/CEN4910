@@ -25,6 +25,7 @@ export async function GET(
         totalRows: job.totalRows,
         importedCount: job.importedCount,
         failedCount: job.failedCount,
+        errorCount: job.errorCount,
         errors: job.errors,
         errorReportUrl: job.errorReportUrl,
       },

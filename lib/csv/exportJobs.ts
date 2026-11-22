@@ -48,6 +48,7 @@ export function createExportJob(
   };
 
   exportJobStore.set(exportId, job);
+  console.info("[CSV export] job queued", { exportId, type, status: job.status });
   return job;
 }
 
@@ -69,5 +70,17 @@ export function updateExportJob(
   if (!job) return null;
 
   Object.assign(job, updates, { updatedAt: Date.now() });
+  const details = {
+    exportId,
+    type: job.type,
+    status: job.status,
+    progress: job.progress,
+    rowCount: job.rowCount,
+  };
+  if (job.status === "failed") {
+    console.warn("[CSV export] job failed; details are available in the job status", details);
+  } else {
+    console.info("[CSV export] job update", details);
+  }
   return job;
 }
