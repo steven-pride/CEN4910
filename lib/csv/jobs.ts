@@ -3,7 +3,7 @@
  * Stores job state, progress metrics, and error collections.
  */
 
-import { RowValidationError } from "./validation";
+import type { RowValidationError } from "./validation";
 
 export type JobStatus = "queued" | "processing" | "completed" | "failed";
 
@@ -16,6 +16,7 @@ export interface ImportJob {
   processedRows: number;
   importedCount: number;
   failedCount: number;
+  errorCount: number;
   errors: RowValidationError[];
   errorReportId?: string;
   errorReportUrl?: string;
@@ -48,6 +49,7 @@ export function createImportJob(
     processedRows: 0,
     importedCount: 0,
     failedCount: 0,
+    errorCount: 0,
     errors: [],
     userId,
     createdAt: Date.now(),
@@ -55,6 +57,7 @@ export function createImportJob(
   };
 
   jobStore.set(jobId, job);
+  console.info("[CSV import] job queued", { jobId, type, status: job.status });
   return job;
 }
 
@@ -76,5 +79,22 @@ export function updateImportJob(
   if (!job) return null;
 
   Object.assign(job, updates, { updatedAt: Date.now() });
+  const details = {
+    jobId,
+    type: job.type,
+    status: job.status,
+    progress: job.progress,
+    totalRows: job.totalRows,
+    processedRows: job.processedRows,
+    importedCount: job.importedCount,
+    failedCount: job.failedCount,
+    errorCount: job.errorCount,
+    errors: updates.errors?.map(({ row, column }) => ({ row, column })),
+  };
+  if (job.status === "failed" || job.failedCount > 0) {
+    console.warn("[CSV import] job update", details);
+  } else {
+    console.info("[CSV import] job update", details);
+  }
   return job;
 }

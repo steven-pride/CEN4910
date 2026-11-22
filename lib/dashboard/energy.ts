@@ -1,7 +1,7 @@
 /**
  * Main Dashboard read-only energy calculations.
- * The APIs already expose properties, meters and readings. property_use and
- * unit are read from Supabase with the signed-in user's RLS permissions.
+ * The APIs already expose properties, meters, readings, property-use data,
+ * and backend-calculated energy unit factors.
  *
  * EUI here is the OBSERVED energy for the last three FULL calendar months
  * divided by gross floor area. It is NOT annualized and must never be
@@ -13,7 +13,15 @@ export type PropertyUseRow = {
   weekly_operating_hours: number | string | null;
 };
 
-export type UnitRow = { unit_id: number; unit_name: string };
+export type UnitEnergyFactorRow = {
+  unitId: number;
+  kbtuPerUnit: number | null;
+};
+
+export type UnitRow = {
+  unit_id: number;
+  unit_name: string;
+};
 
 export type MeterRow = {
   meterId: number;
@@ -38,9 +46,6 @@ export type EnergySummary = {
   /** Total observed kBtu; division is delegated to the existing /api/math/eui endpoint. */
   observedKbtu: number | null;
 };
-
-const KBTU_PER_KWH = 3.412141633;
-const KBTU_PER_THERM = 100;
 
 function numeric(value: number | string | null | undefined): number | null {
   if (value === null || value === undefined || value === "") return null;
@@ -67,21 +72,12 @@ function lastDayOfMonth(month: string): string {
   return new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10);
 }
 
-function energyFactor(meter: MeterRow, unitName: string | undefined): number | null {
-  const kind = (meter.meterType || "").toLowerCase().replace(/\s|_|-/g, "");
-  const unit = (unitName || "").toLowerCase().trim();
-  // Do not count water, unknown fuels/units or invent conversions.
-  if (kind.includes("electric") && unit === "kwh") return KBTU_PER_KWH;
-  if (kind.includes("gas") && (unit === "therm" || unit === "therms")) return KBTU_PER_THERM;
-  return null;
-}
-
 export function summarizeEnergyForProperty(
   propertyId: number,
   uses: PropertyUseRow[],
   meters: MeterRow[],
   readings: ReadingRow[],
-  units: UnitRow[],
+  units: Array<UnitEnergyFactorRow | UnitRow>,
   months: string[],
 ): EnergySummary {
   const relevantUses = uses.filter((use) => Number(use.property_id) === propertyId);
@@ -99,7 +95,14 @@ export function summarizeEnergyForProperty(
     : null;
 
   const relevantMeters = meters.filter((meter) => Number(meter.propertyId) === propertyId);
-  const unitMap = new Map(units.map((unit) => [Number(unit.unit_id), unit.unit_name]));
+  const unitMap = new Map<number, number | null>();
+  for (const unit of units) {
+    if ("kbtuPerUnit" in unit) {
+      unitMap.set(Number(unit.unitId), unit.kbtuPerUnit);
+    } else {
+      unitMap.set(Number(unit.unit_id), null);
+    }
+  }
   const energyMeters = relevantMeters.filter((meter) => {
     const kind = (meter.meterType || "").toLowerCase();
     return kind.includes("electric") || kind.includes("gas");
@@ -124,8 +127,8 @@ export function summarizeEnergyForProperty(
       const reading = validReadings[0];
       const usage = numeric(reading.usageQuantity);
       const unitId = reading.unit ?? meter.defaultUnit;
-      const factor = unitId === null ? null : energyFactor(meter, unitMap.get(Number(unitId)));
-      if (usage === null || factor === null) {
+      const factor = unitId === null ? null : unitMap.get(Number(unitId)) ?? null;
+      if (usage === null || factor === null || !Number.isFinite(factor) || factor <= 0) {
         return { grossFloorArea, weeklyOperatingHours, observedKbtu: null };
       }
       totalKbtu += usage * factor;

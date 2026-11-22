@@ -15,6 +15,16 @@ import {
 } from "./validation";
 import { updateImportJob } from "./jobs";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  buildMeterLookup,
+  checkedDatabaseResult,
+  countFailedRows,
+  fetchAllPages,
+  getMeterUpdateError,
+  getMeterWriteMode,
+  importRecords,
+} from "./importer-utils";
+import type { ImportRecord, MeterRecord } from "./importer-utils";
 
 interface UserContext {
   userId?: string;
@@ -23,33 +33,44 @@ interface UserContext {
 }
 
 /**
- * Loads meter lookup map (meter_name -> meter_id) for a given property.
+ * Loads all meters visible to this import, preserving duplicate names and IDs.
  */
-async function loadMeterMap(propertyId?: number): Promise<Record<string, number>> {
-  const map: Record<string, number> = {};
+async function loadMetersInScope(
+  propertyId: number | undefined,
+  userContext: UserContext
+): Promise<MeterRecord[]> {
+  if (
+    userContext.role === "property_manager" &&
+    ((propertyId !== undefined && !userContext.assignedPropertyIds?.includes(propertyId)) ||
+      (propertyId === undefined && (userContext.assignedPropertyIds?.length ?? 0) === 0))
+  ) {
+    return [];
+  }
+
   const supabase = createAdminClient();
-  let query = supabase.from("meter").select("meter_id, meter_name, property_id");
-  if (propertyId) {
-    query = query.eq("property_id", propertyId);
-  }
-  const { data } = await query;
-  if (data && Array.isArray(data)) {
-    for (const m of data) {
-      if (m.meter_name) {
-        map[m.meter_name.toLowerCase().trim()] = m.meter_id;
-      }
+  return fetchAllPages(async (from, to) => {
+    let query = supabase.from("meter").select("meter_id, meter_name, property_id, default_unit");
+    if (propertyId !== undefined) {
+      query = query.eq("property_id", propertyId);
+    } else if (userContext.role === "property_manager") {
+      query = query.in("property_id", userContext.assignedPropertyIds ?? []);
     }
-  }
-  return map;
+    const data = await checkedDatabaseResult(
+      query.order("meter_id", { ascending: true }).range(from, to)
+    );
+    return data ?? [];
+  });
 }
 
 /**
  * Loads unit lookup map (name -> unit_id).
  */
 async function loadUnitMap(): Promise<Record<string, number>> {
-  const map: Record<string, number> = {};
+  const map: Record<string, number> = Object.create(null);
   const supabase = createAdminClient();
-  const { data } = await supabase.from("unit").select("unit_id, unit_name");
+  const data = await checkedDatabaseResult(
+    supabase.from("unit").select("unit_id, unit_name")
+  );
   if (data && Array.isArray(data)) {
     for (const u of data) {
       if (u.unit_name) {
@@ -68,7 +89,7 @@ async function processProperties(
   rows: Record<string, string>[]
 ) {
   const supabase = createAdminClient();
-  const validRecords: ValidatedProperty[] = [];
+  const validRecords: ImportRecord<ValidatedProperty>[] = [];
   const errors: RowValidationError[] = [];
 
   for (let i = 0; i < rows.length; i++) {
@@ -77,30 +98,32 @@ async function processProperties(
     if (rowErrors.length > 0) {
       errors.push(...rowErrors);
     } else if (data) {
-      validRecords.push(data);
+      validRecords.push({ row: rowNum, data });
     }
   }
 
   let importedCount = 0;
   const CHUNK_SIZE = 500;
 
+  const validationFailedCount = countFailedRows(errors);
   for (let i = 0; i < validRecords.length; i += CHUNK_SIZE) {
     const chunk = validRecords.slice(i, i + CHUNK_SIZE);
-
-    for (const item of chunk) {
-      try {
-        // Try to find existing property by (property_name, address_line1, postal_code)
-        const { data: existing } = await supabase
+    importedCount += await importRecords(chunk, async (item) => {
+      // Try to find existing property by (property_name, address_line1, postal_code)
+      const existing = await checkedDatabaseResult(
+        supabase
           .from("property")
           .select("property_id")
           .eq("property_name", item.property_name)
           .eq("address_line1", item.address_line1)
           .eq("postal_code", item.postal_code)
-          .maybeSingle();
+          .maybeSingle()
+      );
 
-        if (existing && existing.property_id) {
-          // Update existing
-          await supabase
+      if (existing && existing.property_id) {
+        // Update existing
+        await checkedDatabaseResult(
+          supabase
             .from("property")
             .update({
               address_line2: item.address_line2,
@@ -111,24 +134,21 @@ async function processProperties(
               occupancy_percent: item.occupancy_percent,
               number_of_buildings: item.number_of_buildings,
             })
-            .eq("property_id", existing.property_id);
-        } else {
-          // Insert new
-          await supabase.from("property").insert(item);
-        }
-        importedCount++;
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Database write error";
-        errors.push({ row: i + 1, column: "database", message: msg });
+            .eq("property_id", existing.property_id)
+        );
+      } else {
+        // Insert new
+        await checkedDatabaseResult(supabase.from("property").insert(item));
       }
-    }
+    }, errors);
 
-    const processed = Math.min(i + CHUNK_SIZE, validRecords.length);
+    const processed = Math.min(validationFailedCount + i + chunk.length, rows.length);
     updateImportJob(jobId, {
       progress: Math.floor((processed / rows.length) * 100),
       processedRows: processed,
       importedCount,
-      failedCount: errors.length,
+      failedCount: countFailedRows(errors),
+      errorCount: errors.length,
     });
   }
 
@@ -146,7 +166,8 @@ async function processMeters(
   propertyId?: number
 ) {
   const supabase = createAdminClient();
-  const validRecords: ValidatedMeter[] = [];
+  const meterLookup = buildMeterLookup(await loadMetersInScope(propertyId, userContext));
+  const validRecords: ImportRecord<ValidatedMeter>[] = [];
   const errors: RowValidationError[] = [];
 
   for (let i = 0; i < rows.length; i++) {
@@ -159,16 +180,22 @@ async function processMeters(
       // Check Property Manager permissions if assignedPropertyIds is specified
       if (
         userContext.role === "property_manager" &&
-        userContext.assignedPropertyIds &&
-        !userContext.assignedPropertyIds.includes(data.property_id)
+        !userContext.assignedPropertyIds?.includes(data.property_id)
       ) {
         errors.push({
           row: rowNum,
           column: "property_id",
           message: `Not authorized to manage property ID ${data.property_id}.`,
         });
+      } else if (data.meter_id !== undefined) {
+        const updateError = getMeterUpdateError(meterLookup, data.meter_id, data.property_id);
+        if (updateError) {
+          errors.push({ row: rowNum, column: "meter_id", message: updateError });
+        } else {
+          validRecords.push({ row: rowNum, data });
+        }
       } else {
-        validRecords.push(data);
+        validRecords.push({ row: rowNum, data });
       }
     }
   }
@@ -176,45 +203,43 @@ async function processMeters(
   let importedCount = 0;
   const CHUNK_SIZE = 500;
 
+  const validationFailedCount = countFailedRows(errors);
   for (let i = 0; i < validRecords.length; i += CHUNK_SIZE) {
     const chunk = validRecords.slice(i, i + CHUNK_SIZE);
-
-    for (const item of chunk) {
-      try {
-        // Natural key: (property_id, meter_name)
-        const { data: existing } = await supabase
-          .from("meter")
-          .select("meter_id")
-          .eq("property_id", item.property_id)
-          .eq("meter_name", item.meter_name)
-          .maybeSingle();
-
-        if (existing && existing.meter_id) {
-          await supabase
+    importedCount += await importRecords(chunk, async (item) => {
+      if (getMeterWriteMode(item.meter_id) === "update") {
+        await checkedDatabaseResult(
+          supabase
             .from("meter")
             .update({
+              meter_name: item.meter_name,
               meter_type: item.meter_type,
               default_unit: item.default_unit,
               active_date: item.active_date,
               inactive_date: item.inactive_date,
             })
-            .eq("meter_id", existing.meter_id);
-        } else {
-          await supabase.from("meter").insert(item);
-        }
-        importedCount++;
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Database write error";
-        errors.push({ row: i + 1, column: "database", message: msg });
+            .eq("meter_id", item.meter_id as number)
+            .eq("property_id", item.property_id)
+        );
+      } else {
+        await checkedDatabaseResult(supabase.from("meter").insert({
+          property_id: item.property_id,
+          meter_name: item.meter_name,
+          meter_type: item.meter_type,
+          default_unit: item.default_unit,
+          active_date: item.active_date,
+          inactive_date: item.inactive_date,
+        }));
       }
-    }
+    }, errors);
 
-    const processed = Math.min(i + CHUNK_SIZE, validRecords.length);
+    const processed = Math.min(validationFailedCount + i + chunk.length, rows.length);
     updateImportJob(jobId, {
       progress: Math.floor((processed / rows.length) * 100),
       processedRows: processed,
       importedCount,
-      failedCount: errors.length,
+      failedCount: countFailedRows(errors),
+      errorCount: errors.length,
     });
   }
 
@@ -227,42 +252,60 @@ async function processMeters(
 async function processReadings(
   jobId: string,
   rows: Record<string, string>[],
+  userContext: UserContext,
   unitMap: Record<string, number>,
   propertyId?: number
 ) {
   const supabase = createAdminClient();
-  const meterMap = await loadMeterMap(propertyId);
-  const validRecords: ValidatedReading[] = [];
+  if (
+    propertyId !== undefined &&
+    userContext.role === "property_manager" &&
+    !userContext.assignedPropertyIds?.includes(propertyId)
+  ) {
+    return {
+      importedCount: 0,
+      errors: rows.map((_, index) => ({
+        row: index + 1,
+        column: "property_id",
+        message: `Not authorized to access property ID ${propertyId}.`,
+      })),
+    };
+  }
+
+  const meterLookup = buildMeterLookup(await loadMetersInScope(propertyId, userContext));
+  const validRecords: ImportRecord<ValidatedReading>[] = [];
   const errors: RowValidationError[] = [];
 
   for (let i = 0; i < rows.length; i++) {
     const rowNum = i + 1;
-    const { data, errors: rowErrors } = validateReadingRow(rows[i], rowNum, unitMap, meterMap);
+    const { data, errors: rowErrors } = validateReadingRow(rows[i], rowNum, unitMap, meterLookup);
     if (rowErrors.length > 0) {
       errors.push(...rowErrors);
     } else if (data) {
-      validRecords.push(data);
+      validRecords.push({ row: rowNum, data });
     }
   }
 
   let importedCount = 0;
   const CHUNK_SIZE = 500;
 
+  const validationFailedCount = countFailedRows(errors);
   for (let i = 0; i < validRecords.length; i += CHUNK_SIZE) {
     const chunk = validRecords.slice(i, i + CHUNK_SIZE);
-
-    for (const item of chunk) {
-      try {
-        // Natural key: (meter_id, start_date)
-        const { data: existing } = await supabase
+    importedCount += await importRecords(chunk, async (item) => {
+      // Natural key: (meter_id, start_date)
+      const existing = await checkedDatabaseResult(
+        supabase
           .from("meter_reading")
           .select("meter_reading_id")
           .eq("meter_id", item.meter_id)
           .eq("start_date", item.start_date)
-          .maybeSingle();
+          .maybeSingle()
+      );
 
-        if (existing && existing.meter_reading_id) {
-          await supabase
+      if (existing && existing.meter_reading_id) {
+        await checkedDatabaseResult(
+          supabase
             .from("meter_reading")
             .update({
               end_date: item.end_date,
@@ -270,23 +313,20 @@ async function processReadings(
               unit: item.unit,
               cost: item.cost,
             })
-            .eq("meter_reading_id", existing.meter_reading_id);
-        } else {
-          await supabase.from("meter_reading").insert(item);
-        }
-        importedCount++;
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Database write error";
-        errors.push({ row: i + 1, column: "database", message: msg });
+            .eq("meter_reading_id", existing.meter_reading_id)
+        );
+      } else {
+        await checkedDatabaseResult(supabase.from("meter_reading").insert(item));
       }
-    }
+    }, errors);
 
-    const processed = Math.min(i + CHUNK_SIZE, validRecords.length);
+    const processed = Math.min(validationFailedCount + i + chunk.length, rows.length);
     updateImportJob(jobId, {
       progress: Math.floor((processed / rows.length) * 100),
       processedRows: processed,
       importedCount,
-      failedCount: errors.length,
+      failedCount: countFailedRows(errors),
+      errorCount: errors.length,
     });
   }
 
@@ -303,6 +343,7 @@ export async function runImportJobAsync(
   userContext: UserContext = {},
   propertyId?: number
 ): Promise<void> {
+  let totalRows = 0;
   try {
     updateImportJob(jobId, { status: "processing", progress: 5 });
 
@@ -316,14 +357,16 @@ export async function runImportJobAsync(
         processedRows: 0,
         importedCount: 0,
         failedCount: 0,
+        errorCount: 1,
         errors: [{ row: 0, column: "file", message: "CSV file is empty or contains no data rows." }],
       });
       return;
     }
 
     updateImportJob(jobId, { totalRows: rows.length, progress: 10 });
+    totalRows = rows.length;
 
-    const unitMap = await loadUnitMap();
+    const unitMap = type === "properties" ? {} : await loadUnitMap();
 
     let result: { importedCount: number; errors: RowValidationError[] };
 
@@ -332,7 +375,7 @@ export async function runImportJobAsync(
     } else if (type === "meters") {
       result = await processMeters(jobId, rows, userContext, unitMap, propertyId);
     } else {
-      result = await processReadings(jobId, rows, unitMap, propertyId);
+      result = await processReadings(jobId, rows, userContext, unitMap, propertyId);
     }
 
     const finalStatus = result.importedCount > 0 ? "completed" : "failed";
@@ -343,7 +386,8 @@ export async function runImportJobAsync(
       totalRows: rows.length,
       processedRows: rows.length,
       importedCount: result.importedCount,
-      failedCount: result.errors.length,
+      failedCount: countFailedRows(result.errors),
+      errorCount: result.errors.length,
       errors: result.errors.slice(0, 50), // keep top 50 in memory
     });
   } catch (err: unknown) {
@@ -351,6 +395,11 @@ export async function runImportJobAsync(
     updateImportJob(jobId, {
       status: "failed",
       progress: 100,
+      totalRows,
+      processedRows: 0,
+      importedCount: 0,
+      failedCount: totalRows,
+      errorCount: 1,
       errors: [{ row: 0, column: "general", message: msg }],
     });
   }
