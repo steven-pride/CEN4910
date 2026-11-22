@@ -51,12 +51,12 @@ export async function runDashboardExportAsync(
       number_of_buildings
     `);
 
-    if (context.role !== "admin" && !context.assignedPropertyIds?.length) {
-      throw new Error("No assigned properties available to export.");
-    }
-
     if (context.role !== "admin") {
-      query = query.in("property_id", context.assignedPropertyIds);
+      const assignedPropertyIds = context.assignedPropertyIds;
+      if (!assignedPropertyIds?.length) {
+        throw new Error("No assigned properties available to export.");
+      }
+      query = query.in("property_id", assignedPropertyIds);
     }
 
     query = query.order("property_name", { ascending: true });
