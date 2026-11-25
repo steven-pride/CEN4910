@@ -29,7 +29,7 @@ export function PropertyHeaderActions({
   const handleExportProperty = async () => {
     try {
       setIsExporting(true);
-      await triggerAsyncExport("/api/export/properties", {
+      await triggerAsyncExport("/api/exports/properties", {
         propertyId,
       });
     } catch (err: unknown) {

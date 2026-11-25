@@ -48,7 +48,7 @@ export function PortfolioHeader({
     try {
       setIsExporting(true);
       setExportProgress(0);
-      await triggerAsyncExport("/api/export/properties", {}, (prog) => {
+      await triggerAsyncExport("/api/exports/properties", {}, (prog) => {
         setExportProgress(prog);
       });
     } catch (err: unknown) {
