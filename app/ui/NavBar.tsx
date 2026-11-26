@@ -80,7 +80,7 @@ export default function NavBar() {
   const segments = pathname.split("/").filter(Boolean);
   const isPropertyRoute = segments[0] === "property";
 
-  // When on a specific property (e.g. /property/123 or /property/123/manage-edit)
+  // When on a specific property (e.g. /property/123 or /property/123/edit)
   const propertyId =
     isPropertyRoute &&
     segments[1] &&
@@ -90,9 +90,9 @@ export default function NavBar() {
 
   const propertyDetailHref = propertyId ? `/property/${propertyId}` : null;
 
-  // Editing a property: /property/[id]/manage-edit or /property/edit
+  // Editing a property: /property/[id]/edit or /property/edit
   const isEditingProperty =
-    (isPropertyRoute && segments[2] === "manage-edit") ||
+    (isPropertyRoute && segments[2] === "edit") ||
     pathname === "/property/edit";
 
   return (

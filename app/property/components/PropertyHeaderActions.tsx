@@ -64,7 +64,7 @@ export function PropertyHeaderActions({
       </Button>
 
       <Link
-        href={`/property/${propertyId}/manage-edit`}
+        href={`/property/${propertyId}/edit`}
         className={cn(buttonVariants(), "inline-flex items-center gap-2")}
       >
         <FilePen />
