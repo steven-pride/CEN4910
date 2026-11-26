@@ -23,7 +23,7 @@ export function ReadingRow({ reading }: { reading: Reading }) {
       <TableCell>
         <div className="flex justify-end gap-2">
           <Button size="sm">
-            <Link href={`/reading/${reading.meterReadingId}/manage-edit`}>Edit</Link>
+            <Link href={`/reading/${reading.meterReadingId}/edit`}>Edit</Link>
           </Button>
         </div>
       </TableCell>
