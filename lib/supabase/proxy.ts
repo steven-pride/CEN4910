@@ -39,7 +39,7 @@ export async function updateSession(request: NextRequest) {
   const expirationDate = data?.claims?.exp
 
   const pathname = request.nextUrl.pathname;
-  const protectedRoutes = ["/admin", "/auth", "/calcs", "/property", "/reading", "/meter", "/sample-crud"];
+  const protectedRoutes = ["/admin", "/auth", "/calcs", "/property", "/reading", "/meter"];
   const authRoutes = ["/login", "/register"];
 
   const isProtectedPath = protectedRoutes.some((route) => pathname.startsWith(route)) || pathname == "/";

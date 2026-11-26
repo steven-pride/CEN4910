@@ -24,6 +24,5 @@ export const config = {
     "/reading/:path*",
     "/login",
     "/register",
-    "/sample-crud",
   ],
 }
