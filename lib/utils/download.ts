@@ -26,7 +26,7 @@ export async function triggerAsyncExport(
 
   const initData = await response.json();
   const exportId = initData.exportId;
-  const statusUrl = initData.statusUrl || `/api/export/jobs/${exportId}`;
+  const statusUrl = initData.statusUrl || `/api/exports/jobs/${exportId}`;
 
   // 2. Poll until export completes or fails (up to 5 minutes)
   const jobData = await pollJob(statusUrl, {

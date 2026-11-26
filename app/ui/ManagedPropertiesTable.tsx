@@ -311,7 +311,7 @@ export function ManagedPropertiesTable({
                       </Link>
 
                       <Link
-                        href={`/property/${property.propertyId}/manage-edit`}
+                        href={`/property/${property.propertyId}/edit`}
                         className="rounded-md bg-slate-100 px-6 pt-3.5 text-xs font-semibold text-slate-700"
                       >
                         Edit

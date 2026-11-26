@@ -91,7 +91,7 @@ async function handleExport(request: NextRequest) {
         success: true,
         exportId,
         status: "queued",
-        statusUrl: `/api/export/jobs/${exportId}`,
+        statusUrl: `/api/exports/jobs/${exportId}`,
       },
       { status: 202 }
     );
